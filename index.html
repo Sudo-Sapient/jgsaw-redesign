@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JgSaw</title>
+<meta name="description" content="Every business has its own way of winning. JgSaw captures it, then applies tested sales and marketing methods to every deal, campaign and piece of content.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=1793088503">
+</head>
+<body>
+
+<canvas id="ambient" aria-hidden="true"></canvas>
+
+<!-- ============ NAV ============ -->
+<header class="nav" id="nav">
+  <div class="nav__inner">
+    <a href="#top" class="logo" aria-label="JgSaw home">
+      <img class="logo__img" src="jgsaw-logo.svg" alt="JgSaw" width="163" height="52">
+    </a>
+
+    <nav class="nav__links" aria-label="Primary">
+      <div class="nav__item has-menu">
+        <button class="nav__link" aria-expanded="false" aria-haspopup="true">Platform <span class="caret">▾</span></button>
+        <div class="mega">
+          <div class="mega__grid mega__grid--platform">
+            <div>
+              <p class="label">Foundation</p>
+              <a href="#layer-1" class="mega__entry"><span>Core Context</span><small>Your business, documented once</small></a>
+              <a href="#layer-2" class="mega__entry"><span>Road to Win</span><small>Your winning habit, documented with evidence</small></a>
+            </div>
+            <div>
+              <p class="label">Method and output</p>
+              <a href="#layer-3" class="mega__entry"><span>Craft</span><small>Proven frameworks in every output</small></a>
+              <a href="#layer-4" class="mega__entry"><span>Generation</span><small>Deals, campaigns and content, produced</small></a>
+              <div class="mega__sub">
+                <a href="#layer-4"><span>Deal intelligence</span><small>Prospect research, buying committee and next moves</small></a>
+                <a href="#layer-4"><span>Campaign planning</span><small>From brief to touch plan to sales handover</small></a>
+                <a href="#layer-4"><span>Content creation</span><small>Posts, blogs, emails and more, built to method</small></a>
+              </div>
+            </div>
+            <div>
+              <p class="label">Over time</p>
+              <a href="#layer-5" class="mega__entry"><span>Compounding</span><small>Learns as you grow</small></a>
+              <a href="#ways" class="mega__entry"><span>JgSaw MCP</span><small>Use JgSaw inside Claude</small></a>
+            </div>
+            <div class="mega__aside">
+              <p class="label label--amber">See it on one of your deals</p>
+              <p class="mega__copy">Send us a deal you're working on and we send back what JgSaw makes of it within one working day.</p>
+              <a href="#send" class="ghost ghost--amber">Send us a deal →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav__item has-menu">
+        <button class="nav__link" aria-expanded="false" aria-haspopup="true">Solutions <span class="caret">▾</span></button>
+        <div class="mega">
+          <div class="mega__grid mega__grid--solutions">
+            <div class="mega__col-wide">
+              <p class="label">Workflows</p>
+              <div class="mega__two">
+                <a href="#ways" class="mega__entry"><span>Agency operations</span><small>Brief to billing, orchestrated on your existing tools</small></a>
+                <a href="#ways" class="mega__entry"><span>Content and creative production</span><small>Brand-governed content at volume, with approval gates</small></a>
+                <a href="#ways" class="mega__entry"><span>PR and media intelligence</span><small>Targeting, pitching, monitoring, crisis readiness and AI search visibility</small></a>
+                <a href="#ways" class="mega__entry"><span>Influencer and creator programmes</span><small>Discovery, vetting, briefing and performance</small></a>
+                <a href="#ways" class="mega__entry"><span>Research and planning</span><small>Audience, category and competitor intelligence</small></a>
+                <a href="#ways" class="mega__entry"><span>Reporting and measurement</span><small>Client reporting and ROI, automated</small></a>
+                <a href="#ways" class="mega__entry"><span>Customer lifecycle workflows</span><small>Support, cross-sell, upsell and customer success</small></a>
+              </div>
+            </div>
+            <div>
+              <p class="label">By industry</p>
+              <a href="#ways" class="mega__entry"><span>Industry verticals</span><small>Any workflow, built for one industry's rules, vocabulary and field teams</small></a>
+            </div>
+            <div class="mega__aside">
+              <p class="label label--amber">Built on your intellectual property</p>
+              <p class="mega__copy">We design and build AI workflows for marketing, communications and advertising businesses, on top of your existing tools and built on your own intellectual property.</p>
+              <a href="#send" class="ghost ghost--amber">Talk to us about a workflow →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <a href="#ways" class="nav__link">Resources</a>
+      <a href="#faq" class="nav__link">About</a>
+    </nav>
+
+    <a href="#send" class="btn btn--primary nav__cta">Send us a deal</a>
+    <button class="nav__burger" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
+  </div>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#layer-1">Platform</a>
+    <a href="#ways">Solutions</a>
+    <a href="#ways">Resources</a>
+    <a href="#faq">About</a>
+    <a href="#send" class="btn btn--primary">Send us a deal</a>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="wrap hero__grid">
+    <div class="hero__copy">
+      <h1 class="display reveal">Your expertise, scaled by real marketing science.</h1>
+      <p class="body hero__lede reveal">Every business has its own way of winning. JgSaw captures it, then applies tested sales and marketing methods to every deal, campaign and piece of content, building a winning habit across your whole business.</p>
+      <div class="hero__offer reveal">
+        <p class="label label--amber">Send us a deal you're working on</p>
+        <p class="body body--muted">Name the company and what you'd sell them. We send back what JgSaw makes of it within one working day.</p>
+        <a href="#send" class="btn btn--primary">Send us a deal</a>
+      </div>
+    </div>
+    <div class="hero__visual">
+      <canvas id="brain" aria-label="A jigsaw puzzle assembling itself, the final piece clicking into place" role="img"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LAYER DETAILS ============ -->
+<section class="layer" id="layer-1">
+  <div class="wrap layer__grid">
+    <div class="layer__visual"><canvas id="coreBrain" role="img" aria-label="A brain with its core lit, sending signals to company profile, products, customer profiles, buying committee, competitors and brand voice"></canvas></div>
+    <div class="layer__copy">
+      <p class="label label--amber reveal">Layer 1</p>
+      <h2 class="heading-lg reveal">Core Context</h2>
+      <p class="subheading reveal">Your business, documented once. A single source of truth.</p>
+      <ul class="points">
+        <li class="reveal">Company profile, products, customer profiles, buying committee, competitors and brand voice in one place</li>
+        <li class="reveal">JgSaw drafts it and you approve every part before anything uses it</li>
+        <li class="reveal">Every deal, campaign and asset draws on it, so the whole team works from the same facts</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="layer layer--flip" id="layer-2">
+  <div class="wrap layer__grid">
+    <div class="layer__visual"><canvas id="roadWin" role="img" aria-label="A winding road bends itself into the letter W"></canvas></div>
+    <div class="layer__copy">
+      <p class="label label--amber reveal">Layer 2</p>
+      <h2 class="heading-lg reveal">Road to Win</h2>
+      <p class="subheading reveal">Your winning habit, documented with evidence.</p>
+      <ul class="points">
+        <li class="reveal">Every business has its own winning habit: how it finds, qualifies and closes the deals it wins</li>
+        <li class="reveal">Captured in a working session with your key people, then backed by the evidence behind each point</li>
+        <li class="reveal">Maps the customers you win with, where deals come from, what earns a reply, when you win, where you lose, where deals stall, what accelerates a deal and what proof moves a buyer</li>
+        <li class="reveal">Every statement shows how strong its evidence is and traces back to its source. Where sources disagree, both are shown</li>
+        <li class="reveal">Applied to every team member and every deal, and refined as deals close</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="layer" id="layer-3">
+  <div class="wrap layer__grid">
+    <div class="layer__visual"><canvas class="shape" data-shape="grid" aria-hidden="true"></canvas></div>
+    <div class="layer__copy">
+      <p class="label label--amber reveal">Layer 3</p>
+      <h2 class="heading-lg reveal">Craft</h2>
+      <p class="subheading reveal">Proven frameworks in every output.</p>
+      <dl class="frameworks">
+        <div class="reveal"><dt>Deals</dt><dd>MEDDPICC, BANT, Gartner's buying jobs, Gap Selling and April Dunford's positioning</dd></div>
+        <div class="reveal"><dt>Campaigns</dt><dd>Account-based marketing</dd></div>
+        <div class="reveal"><dt>Content</dt><dd>E-E-A-T, SEO and AI-answer optimisation</dd></div>
+      </dl>
+      <p class="body body--muted reveal">A written method for each asset type, with evidence behind every claim.</p>
+    </div>
+  </div>
+</section>
+
+<section class="layer layer--flip" id="layer-4">
+  <div class="wrap layer__grid">
+    <div class="layer__visual"><canvas class="shape" data-shape="burst" aria-hidden="true"></canvas></div>
+    <div class="layer__copy">
+      <p class="label label--amber reveal">Layer 4</p>
+      <h2 class="heading-lg reveal">Generation</h2>
+      <p class="subheading reveal">Deals, campaigns and content, produced.</p>
+      <div class="outputs">
+        <div class="reveal">
+          <h3 class="heading-xs">Deal intelligence</h3>
+          <p class="body body--muted">Prospect research, buying committee mapping, competitive positioning, qualification scoring and a plan of next moves</p>
+        </div>
+        <div class="reveal">
+          <h3 class="heading-xs">Campaign planning</h3>
+          <p class="body body--muted">A brief turned into a multi-touch plan, assets for every touch and a handover to sales</p>
+        </div>
+        <div class="reveal">
+          <h3 class="heading-xs">Content creation</h3>
+          <p class="body body--muted">LinkedIn posts, blog posts, emails, case studies, landing pages and video scripts</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="layer" id="layer-5">
+  <div class="wrap layer__grid">
+    <div class="layer__visual"><canvas class="shape" data-shape="spiral" aria-hidden="true"></canvas></div>
+    <div class="layer__copy">
+      <p class="label label--amber reveal">Layer 5</p>
+      <h2 class="heading-lg reveal">Compounding</h2>
+      <p class="subheading reveal">Learns as you grow.</p>
+      <ul class="points">
+        <li class="reveal">Learns from replies, corrections, check-ins and deal outcomes</li>
+        <li class="reveal">Stays current through ongoing research on your market, competitors and each prospect</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ INTEGRATIONS ============ -->
+<section class="stack">
+  <div class="wrap stack__grid">
+    <div>
+      <p class="label label--amber reveal">Integrations</p>
+      <h2 class="heading-lg reveal">Works with your stack</h2>
+    </div>
+    <div>
+      <p class="body stack__lede reveal">Connects to the tools your team already uses, so nobody changes how they work.</p>
+      <ul class="logos reveal">
+        <li>Zoho CRM</li>
+        <li class="logos__tbc">[Integration]</li>
+        <li class="logos__tbc">[Integration]</li>
+        <li class="logos__tbc">[Integration]</li>
+        <li class="logos__tbc">[Integration]</li>
+      </ul>
+      <p class="caption reveal">Live integrations at launch: [list to come]</p>
+      <a href="#ways" class="ghost ghost--amber reveal">Use JgSaw inside Claude through JgSaw MCP →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ THREE WAYS ============ -->
+<section class="ways" id="ways">
+  <div class="wrap">
+    <h2 class="heading-lg reveal">Three ways to use JgSaw</h2>
+    <div class="ways__row">
+      <article class="way reveal">
+        <span class="way__num">i.</span>
+        <h3 class="heading">With your team</h3>
+        <p class="body body--muted">The full platform, working across your deals, campaigns and content</p>
+        <a href="#layer-1" class="ghost">Platform →</a>
+      </article>
+      <article class="way reveal">
+        <span class="way__num">ii.</span>
+        <h3 class="heading">Inside Claude</h3>
+        <p class="body body--muted">Your context and methods, available where you already work</p>
+        <a href="#send" class="ghost">JgSaw MCP →</a>
+      </article>
+      <article class="way reveal">
+        <span class="way__num">iii.</span>
+        <h3 class="heading">Built around your process</h3>
+        <p class="body body--muted">Custom AI workflows for marketing, communications and advertising, built on your intellectual property</p>
+        <a href="#send" class="ghost">Solutions →</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="faq" id="faq">
+  <div class="wrap faq__grid">
+    <h2 class="heading-lg reveal">Questions</h2>
+    <div class="faq__list">
+      <details class="reveal">
+        <summary>What is JgSaw? <span class="faq__icon">+</span></summary>
+        <p>JgSaw captures how your business wins, then applies tested sales and marketing methods to every deal, campaign and piece of content, building a winning habit across your whole business.</p>
+      </details>
+      <details class="reveal">
+        <summary>How is it different from using an AI assistant on my own? <span class="faq__icon">+</span></summary>
+        <p>A general assistant starts from zero every time. JgSaw works from your approved Core Context and your evidence-backed Road to Win, applies proven frameworks such as MEDDPICC and E-E-A-T, and learns from every reply and deal outcome.</p>
+      </details>
+      <details class="reveal">
+        <summary>What do you need from us? <span class="faq__icon">+</span></summary>
+        <p>A working session with your key people to capture your winning habit, plus access to the sources behind it. JgSaw drafts your Core Context and you approve every part before anything uses it.</p>
+      </details>
+      <details class="reveal">
+        <summary>How long does setup take? <span class="faq__icon">+</span></summary>
+        <p>Talk to us. Timing depends on your team and sources. The fastest way to see JgSaw at work is to send us a deal: you get the output within one working day.</p>
+      </details>
+      <details class="reveal">
+        <summary>Does it connect to our CRM? <span class="faq__icon">+</span></summary>
+        <p>Yes. JgSaw connects to the tools your team already uses, starting with Zoho CRM, so nobody changes how they work.</p>
+      </details>
+      <details class="reveal">
+        <summary>What happens when I send a deal? <span class="faq__icon">+</span></summary>
+        <p>Name the company and what you'd sell them. Within one working day we send back what JgSaw makes of it: prospect research, buying committee mapping, competitive positioning, qualification scoring and a plan of next moves.</p>
+      </details>
+      <details class="reveal">
+        <summary>How is our data handled? <span class="faq__icon">+</span></summary>
+        <p>Your context and intellectual property belong to you. Every statement traces back to its source, and you approve your Core Context before anything uses it. Full details are in our privacy and terms.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CLOSING / SEND A DEAL ============ -->
+<section class="send" id="send">
+  <div class="wrap send__grid">
+    <div>
+      <p class="label label--amber reveal">See it on one of your deals</p>
+      <h2 class="display display--md reveal">Send us a deal you're working on</h2>
+      <p class="body send__lede reveal">Name the company and what you'd sell them. We send back what JgSaw makes of it within one working day.</p>
+    </div>
+    <form class="deal-form reveal" id="dealForm" novalidate>
+      <label class="field">
+        <span class="label">Company</span>
+        <input type="text" name="company" placeholder="Who are you selling to?" required autocomplete="organization">
+      </label>
+      <label class="field">
+        <span class="label">Their website</span>
+        <input type="text" name="url" placeholder="company.com" inputmode="url" autocomplete="url" maxlength="200">
+      </label>
+      <label class="field">
+        <span class="label">What you'd sell them</span>
+        <textarea name="offer" rows="3" placeholder="The product, service or project" required></textarea>
+      </label>
+      <label class="field">
+        <span class="label">Your work email</span>
+        <input type="email" name="email" placeholder="you@company.com" required autocomplete="email">
+      </label>
+      <button type="submit" class="btn btn--primary">Send us a deal</button>
+      <p class="form-msg" role="status" aria-live="polite"></p>
+    </form>
+    <div class="deal-done" id="dealDone" hidden>
+      <canvas id="dealCanvas" role="img" aria-label="The company's logo, broken into jigsaw pieces, being put back together by JgSaw"></canvas>
+      <div class="deal-done__msg" aria-live="polite">
+        <p class="label label--amber">Deal received</p>
+        <h3 class="heading">Thank you. Our team will contact you soon.</h3>
+        <p class="body body--muted" data-d="note"></p>
+        <button type="button" class="ghost ghost--amber" data-d="again">Send another deal</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <!-- Vision board: filled in after a visitor gives their company name + website -->
+  <section class="vision" id="vision" hidden aria-live="polite">
+    <div class="wrap">
+      <p class="label label--amber">Your vision board</p>
+      <h2 class="heading-lg vision__title">Where <span data-v="company">your company</span> is today, and where JgSaw takes it.</h2>
+      <p class="body body--muted vision__sub" data-v="sub"></p>
+
+      <div class="vision__stage">
+        <canvas id="visionCanvas" role="img" aria-label="Your logo today, dull and scattered, then rebuilt bright and sharp with JgSaw"></canvas>
+        <div class="vision__tags"><span>Today</span><span>With JgSaw</span></div>
+      </div>
+
+      <div class="vision__body" hidden>
+        <div class="vision__scores">
+          <div class="vision__legend"><span class="dot dot--now"></span>Today <span class="dot dot--after"></span>With JgSaw (projected)</div>
+          <div data-v="scores"></div>
+        </div>
+        <div class="vision__cols">
+          <div>
+            <p class="label">Today</p>
+            <dl class="vision__facts" data-v="today"></dl>
+          </div>
+          <div>
+            <p class="label label--amber">With JgSaw</p>
+            <ul class="points" data-v="after"></ul>
+          </div>
+        </div>
+        <p class="caption vision__note">Based on what's publicly visible on <span data-v="domain"></span>. "With JgSaw" figures are projections, not guarantees. <a href="#send" class="ghost ghost--amber">Send us a deal for the full picture</a></p>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap footer__inner">
+    <p class="footer__tag">Your expertise, scaled by real marketing science.</p>
+    <div class="footer__row">
+      <a href="#top" class="logo" aria-label="JgSaw home"><img class="logo__img" src="jgsaw-logo.svg" alt="JgSaw" width="163" height="52"></a>
+      <a href="#" class="ghost">Privacy and terms</a>
+      <span class="caption">© <span id="year"></span> JgSaw</span>
+    </div>
+  </div>
+</footer>
+
+
+<!-- Vision popup (appears after 10s on the site) -->
+<div class="vpop" id="vpop" hidden>
+  <div class="vpop__panel" role="dialog" aria-modal="true" aria-labelledby="vpopTitle">
+    <button class="vpop__close" type="button" aria-label="Close">&times;</button>
+    <canvas class="vpop__art" id="vpopArt" aria-hidden="true"></canvas>
+    <p class="label label--amber">Free vision board</p>
+    <h2 class="heading vpop__title" id="vpopTitle">See your company today, and with JgSaw.</h2>
+    <p class="body body--muted">Tell us who you are. We read your website and show you your go-to-market, now and next. Takes about 10 seconds.</p>
+    <form class="deal-form vpop__form" id="vpopForm" novalidate>
+      <label class="field">
+        <span class="label">Company name</span>
+        <input type="text" name="company" placeholder="Acme Ltd" required autocomplete="organization" maxlength="80">
+      </label>
+      <label class="field">
+        <span class="label">Company website</span>
+        <input type="text" name="url" placeholder="acme.com" required inputmode="url" autocomplete="url" maxlength="200">
+      </label>
+      <button type="submit" class="btn btn--primary">Show my vision</button>
+      <p class="form-msg" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</div>
+<script src="main.js?v=1793088503"></script>
+</body>
+</html>

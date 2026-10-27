@@ -1,0 +1,9 @@
+# private: real deals with people's emails
+deals.jsonl
+# local test scripts, screenshots and backups
+.tools/
+node_modules/
+__pycache__/
+.vercel
+.DS_Store
+.env*

@@ -1,0 +1,12 @@
+{
+  "cleanUrls": false,
+  "rewrites": [
+    { "source": "/api/:fn(analyze|logo|deal)", "destination": "/api/index?fn=:fn" }
+  ],
+  "functions": {
+    "api/index.py": { "maxDuration": 60 }
+  },
+  "headers": [
+    { "source": "/(.*)\\.(js|css)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }] }
+  ]
+}
