@@ -15,28 +15,47 @@
   const closeAll = (except) => items.forEach(i => {
     if (i !== except) { i.classList.remove('is-open'); i.querySelector('.nav__link').setAttribute('aria-expanded', 'false'); }
   });
+  // Mouse: open on hover. Touch (tablets): a tap opens, a second tap or a tap anywhere else closes.
+  // (On touch screens a tap also fires a fake "mouseenter" first, which used to open and instantly close it.)
   items.forEach(item => {
     const btn = item.querySelector('.nav__link');
     let t;
     const open = () => { clearTimeout(t); closeAll(item); item.classList.add('is-open'); btn.setAttribute('aria-expanded', 'true'); };
-    const close = () => { t = setTimeout(() => { item.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); }, 220); };
-    item.addEventListener('mouseenter', open);
-    item.addEventListener('mouseleave', close);
-    btn.addEventListener('click', () => item.classList.contains('is-open') ? (item.classList.remove('is-open'), btn.setAttribute('aria-expanded','false')) : open());
+    const shut = () => { clearTimeout(t); item.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); };
+    item.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') open(); });
+    item.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') t = setTimeout(shut, 220); });
+    btn.addEventListener('click', () => item.classList.contains('is-open') ? shut() : open());
     item.querySelectorAll('.mega a').forEach(a => a.addEventListener('click', () => closeAll()));
   });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+  document.addEventListener('pointerdown', e => { if (!e.target.closest('.nav__item.has-menu')) closeAll(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeAll(); setMobile(false); } });
 
+  /* Phone and tablet menu: a full-screen sheet. Platform and Solutions open their own lists;
+     the picture at the top rebuilds into whatever you tap (drawn by the mega-menu code further down). */
   const burger = document.querySelector('.nav__burger');
   const mobile = document.getElementById('mobileMenu');
-  burger.addEventListener('click', () => {
-    const open = burger.getAttribute('aria-expanded') !== 'true';
+  [mobile.querySelector('.mm__stage'), ...mobile.querySelectorAll('.mm__list > *'), mobile.querySelector('.mm__cta')]
+    .forEach((el, i) => el && el.style.setProperty('--i', i));
+  function setMobile(open) {
+    if (open === mobile.classList.contains('is-open')) return;
     burger.setAttribute('aria-expanded', String(open));
+    burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
     mobile.classList.toggle('is-open', open);
+    mobile.setAttribute('aria-hidden', String(!open));
+    document.documentElement.classList.toggle('menu-open', open);
+    mobile.dispatchEvent(new CustomEvent(open ? 'mm:open' : 'mm:close'));
+  }
+  burger.addEventListener('click', () => setMobile(burger.getAttribute('aria-expanded') !== 'true'));
+  mobile.querySelectorAll('.mm__group').forEach(g => {
+    const head = g.querySelector('.mm__head');
+    head.addEventListener('click', () => {
+      const open = !g.classList.contains('is-open');
+      mobile.querySelectorAll('.mm__group').forEach(o => { o.classList.toggle('is-open', o === g && open); o.querySelector('.mm__head').setAttribute('aria-expanded', String(o === g && open)); });
+      if (open) mobile.dispatchEvent(new CustomEvent('mm:art', { detail: g.querySelector('[data-art]').dataset.art }));
+    });
   });
-  mobile.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
-    burger.setAttribute('aria-expanded', 'false'); mobile.classList.remove('is-open');
-  }));
+  mobile.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMobile(false)));
+  window.addEventListener('resize', () => { if (innerWidth > 1080) setMobile(false); });
 
   /* ---------------- Reveal ---------------- */
   const io = new IntersectionObserver(entries => {
@@ -170,7 +189,9 @@
     logo.src = 'jgsaw-logo.svg';
 
     let mx = 0, my = 0, tmx = 0, tmy = 0, visible = true;
-    window.addEventListener('pointermove', e => { tmx = e.clientX / window.innerWidth - 0.5; tmy = e.clientY / window.innerHeight - 0.5; }, { passive: true });
+    window.addEventListener('pointermove', e => { if (e.pointerType !== 'mouse') return; tmx = e.clientX / window.innerWidth - 0.5; tmy = e.clientY / window.innerHeight - 0.5; }, { passive: true });
+    // touch screens have no cursor to follow, so the loose triangles drift a little as you scroll instead
+    if (window.matchMedia('(hover: none)').matches) window.addEventListener('scroll', () => { tmy = Math.min(0.5, window.scrollY / 600); tmx = tmy * -0.4; }, { passive: true });
     watchVisible(heroCanvas, v => visible = v);
     window.addEventListener('resize', resize);
 
@@ -199,7 +220,7 @@
       // which picture this loop gathers into: jgsaw, or (every other loop, once we know them) the visitor's logo
       const theirs = !!(brand && !reduce && pts[0].bx !== undefined && (Math.floor(T / CYCLE) + brandOn) % 2 === 1);
       mx += (tmx - mx) * 0.05; my += (tmy - my) * 0.05;
-      const W = heroCanvas.width, H = heroCanvas.height, L = Math.min(W * 0.86, H * 0.86 / ratio);
+      const W = heroCanvas.width, H = heroCanvas.height, L = Math.min(W * (W < 700 * DPR ? 0.92 : 0.86), H * 0.86 / ratio);
       const ox = W / 2, oy = H / 2;
       ctx.clearRect(0, 0, W, H);
 
@@ -1562,11 +1583,8 @@
     const cache = {};
     const targets = key => cache[key] || (cache[key] = ART[key].make(N));
 
-    panels.forEach(panel => {
-      const canvas = panel.querySelector('.mega__canvas');
-      const cols = panel.querySelector('.mega__cols');
-      const hl = panel.querySelector('.mega__hl');
-      const links = [...panel.querySelectorAll('[data-art]')];
+    // one particle picture on a canvas; active() says whether it should keep drawing
+    const stage = (canvas, active) => {
       const { ctx } = setup(canvas);
       const P = Array.from({ length: N }, () => ({
         x: gauss() * 0.3, y: gauss() * 0.3, z: gauss() * 0.3, fx: 0, fy: 0, fz: 0, tx: 0, ty: 0, tz: 0,
@@ -1595,9 +1613,9 @@
 
       const frame = ms => {
         const now = ms / 1000;
-        if (!isOpen(panel) && now - last > 0.4) { running = false; return; }
-        if (isOpen(panel)) last = now;
-        const W = canvas.width, H = canvas.height, sc = Math.min(W, H) * 0.86;
+        if (!active() && now - last > 0.4) { running = false; return; }
+        if (active()) last = now;
+        const W = canvas.width, H = canvas.height, sc = Math.min(W, H) * 0.86, big = Math.min(1.5, Math.max(1, Math.min(W, H) / (260 * DPR)));
         ctx.clearRect(0, 0, W, H);
         ctx.globalCompositeOperation = 'lighter';
         ctx.lineWidth = 1 * DPR;
@@ -1617,11 +1635,23 @@
           const f = 2.6 / (2.6 + z2);
           p.rot += p.vr * 0.016;
           const a = (0.4 + 0.6 * k) * (p.acc ? 1 : 0.85) * Math.min(1, f);
-          tri(ctx, W / 2 + x1 * sc * f, H / 2 + y1 * sc * f, p.s * DPR * f * (p.acc ? 1.15 : 1), p.rot, p.c, a);
+          tri(ctx, W / 2 + x1 * sc * f, H / 2 + y1 * sc * f, p.s * DPR * f * big * (p.acc ? 1.15 : 1), p.rot, p.c, a);
         }
         ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
         requestAnimationFrame(frame);
       };
+
+      const wake = () => { if (!running) { running = true; last = performance.now() / 1000; requestAnimationFrame(frame); } };
+      const scatter = () => { cur = null; P.forEach(p => { p.x = gauss() * 0.35; p.y = gauss() * 0.35; p.z = gauss() * 0.2; }); };
+      return { show, wake, scatter, get cur() { return cur; } };
+    };
+
+    panels.forEach(panel => {
+      const cols = panel.querySelector('.mega__cols');
+      const hl = panel.querySelector('.mega__hl');
+      const links = [...panel.querySelectorAll('[data-art]')];
+      const st = stage(panel.querySelector('.mega__canvas'), () => isOpen(panel));
+      const show = k => st.show(k);
 
       // the soft row highlight glides to whichever link you point at
       const glide = a => {
@@ -1641,11 +1671,35 @@
       const item = panel.closest('.nav__item');
       new MutationObserver(() => {
         if (item.classList.contains('is-open')) {
-          if (!cur) { P.forEach(p => { p.x = gauss() * 0.35; p.y = gauss() * 0.35; p.z = gauss() * 0.2; }); show(links[0].dataset.art); }
-          else if (!running) { running = true; last = performance.now() / 1000; requestAnimationFrame(frame); }
+          if (!st.cur) { st.scatter(); show(links[0].dataset.art); }
+          else st.wake();
         } else { hl.classList.remove('is-on'); links.forEach(l => l.classList.remove('is-active')); }
       }).observe(item, { attributes: true, attributeFilter: ['class'] });
     });
+
+    /* Phone / tablet sheet: the picture at the top plays through the items of whichever section is open
+       (or the five platform layers when none is), lighting up the matching link as it goes. Tapping a link
+       takes you to it, so the picture can't wait for a hover. */
+    const mm = document.getElementById('mobileMenu');
+    const mmCanvas = mm && mm.querySelector('.mm__canvas');
+    if (mmCanvas) {
+      const open = () => mm.classList.contains('is-open');
+      const st = stage(mmCanvas, open);
+      const LAYERS = ['core', 'road', 'craft', 'generation', 'compounding'];
+      let list = LAYERS, i = 0, timer = 0;
+      const mark = key => mm.querySelectorAll('.mm__sub a').forEach(a => a.classList.toggle('is-active', a.dataset.art === key && list !== LAYERS));
+      const step = () => { const key = list[i % list.length]; i++; st.show(key); mark(key); };
+      const play = () => { clearInterval(timer); i = 0; step(); if (!reduce) timer = setInterval(step, 2600); };
+      mm.addEventListener('mm:open', () => { list = LAYERS; st.scatter(); play(); });
+      mm.addEventListener('mm:close', () => { clearInterval(timer); });
+      mm.addEventListener('mm:art', e => {
+        const g = [...mm.querySelectorAll('.mm__group')].find(x => x.querySelector(`[data-art="${e.detail}"]`));
+        list = [...g.querySelectorAll('[data-art]')].map(a => a.dataset.art); play();
+      });
+      mm.querySelectorAll('.mm__group .mm__head').forEach(h => h.addEventListener('click', () => {
+        if (!mm.querySelector('.mm__group.is-open')) { list = LAYERS; play(); }
+      }));
+    }
   })();
 
   /* ---------------- Ambient field ---------------- */

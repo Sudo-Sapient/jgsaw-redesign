@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=1793605566">
+<link rel="stylesheet" href="styles.css?v=1793612439">
 </head>
 <body>
 
@@ -105,12 +105,45 @@
     <button class="nav__burger" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
   </div>
 
-  <div class="mobile-menu" id="mobileMenu">
-    <a href="#layer-1">Platform</a>
-    <a href="#ways">Solutions</a>
-    <a href="#ways">Resources</a>
-    <a href="#faq">About</a>
-    <a href="#send" class="btn btn--primary">Send us a deal</a>
+  <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+    <div class="mm__stage"><canvas class="mm__canvas" aria-hidden="true"></canvas><i></i><i></i><i></i><i></i></div>
+    <div class="mm__list">
+      <div class="mm__group">
+        <button class="mm__head" aria-expanded="false">Platform <span class="mm__plus" aria-hidden="true"></span></button>
+        <div class="mm__sub"><div>
+          <p class="label">Foundation</p>
+          <a href="#layer-1" data-art="core">Core Context</a>
+          <a href="#layer-2" data-art="road">Road to Win</a>
+          <p class="label">Method and output</p>
+          <a href="#layer-3" data-art="craft">Craft</a>
+          <a href="#layer-4" data-art="generation">Generation</a>
+          <a href="#layer-4" data-art="deals" class="mm__child">Deal intelligence</a>
+          <a href="#layer-4" data-art="campaigns" class="mm__child">Campaign planning</a>
+          <a href="#layer-4" data-art="content" class="mm__child">Content creation</a>
+          <p class="label">Over time</p>
+          <a href="#layer-5" data-art="compounding">Compounding</a>
+          <a href="#ways" data-art="mcp">JgSaw MCP</a>
+        </div></div>
+      </div>
+      <div class="mm__group">
+        <button class="mm__head" aria-expanded="false">Solutions <span class="mm__plus" aria-hidden="true"></span></button>
+        <div class="mm__sub"><div>
+          <p class="label">Workflows</p>
+          <a href="#ways" data-art="ops">Agency operations</a>
+          <a href="#ways" data-art="creative">Content and creative production</a>
+          <a href="#ways" data-art="pr">PR and media intelligence</a>
+          <a href="#ways" data-art="influencer">Influencer and creator programmes</a>
+          <a href="#ways" data-art="research">Research and planning</a>
+          <a href="#ways" data-art="reporting">Reporting and measurement</a>
+          <a href="#ways" data-art="lifecycle">Customer lifecycle workflows</a>
+          <p class="label">By industry</p>
+          <a href="#ways" data-art="industry">Industry verticals</a>
+        </div></div>
+      </div>
+      <a href="#ways" class="mm__head">Resources</a>
+      <a href="#faq" class="mm__head">About</a>
+    </div>
+    <a href="#send" class="btn btn--primary mm__cta">Send us a deal</a>
   </div>
 </header>
 
@@ -420,6 +453,6 @@
     </form>
   </div>
 </div>
-<script src="main.js?v=1793605566"></script>
+<script src="main.js?v=1793612439"></script>
 </body>
 </html>
