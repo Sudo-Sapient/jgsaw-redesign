@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=1793088503">
+<link rel="stylesheet" href="styles.css?v=1793605566">
 </head>
 <body>
 
@@ -23,69 +23,81 @@
     </a>
 
     <nav class="nav__links" aria-label="Primary">
-      <div class="nav__item has-menu">
-        <button class="nav__link" aria-expanded="false" aria-haspopup="true">Platform <span class="caret">▾</span></button>
-        <div class="mega">
-          <div class="mega__grid mega__grid--platform">
-            <div>
-              <p class="label">Foundation</p>
-              <a href="#layer-1" class="mega__entry"><span>Core Context</span><small>Your business, documented once</small></a>
-              <a href="#layer-2" class="mega__entry"><span>Road to Win</span><small>Your winning habit, documented with evidence</small></a>
-            </div>
-            <div>
-              <p class="label">Method and output</p>
-              <a href="#layer-3" class="mega__entry"><span>Craft</span><small>Proven frameworks in every output</small></a>
-              <a href="#layer-4" class="mega__entry"><span>Generation</span><small>Deals, campaigns and content, produced</small></a>
-              <div class="mega__sub">
-                <a href="#layer-4"><span>Deal intelligence</span><small>Prospect research, buying committee and next moves</small></a>
-                <a href="#layer-4"><span>Campaign planning</span><small>From brief to touch plan to sales handover</small></a>
-                <a href="#layer-4"><span>Content creation</span><small>Posts, blogs, emails and more, built to method</small></a>
+          <div class="nav__item has-menu">
+            <button class="nav__link" aria-expanded="false" aria-haspopup="true">Platform <span class="caret">▾</span></button>
+            <div class="mega">
+              <div class="mega__panel mega__panel--platform">
+                <div class="mega__cols">
+                  <span class="mega__hl" aria-hidden="true"></span>
+                  <div>
+                    <p class="label">Foundation</p>
+                    <a href="#layer-1" class="mega__entry" data-art="core"><span>Core Context</span><small>Your business, documented once</small></a>
+                    <a href="#layer-2" class="mega__entry" data-art="road"><span>Road to Win</span><small>Your winning habit, documented with evidence</small></a>
+                  </div>
+                  <div>
+                    <p class="label">Method and output</p>
+                    <a href="#layer-3" class="mega__entry" data-art="craft"><span>Craft</span><small>Proven frameworks in every output</small></a>
+                    <a href="#layer-4" class="mega__entry" data-art="generation"><span>Generation</span><small>Deals, campaigns and content, produced</small></a>
+                    <div class="mega__sub">
+                      <a href="#layer-4" data-art="deals"><span>Deal intelligence</span><small>Prospect research, buying committee and next moves</small></a>
+                      <a href="#layer-4" data-art="campaigns"><span>Campaign planning</span><small>From brief to touch plan to sales handover</small></a>
+                      <a href="#layer-4" data-art="content"><span>Content creation</span><small>Posts, blogs, emails and more, built to method</small></a>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="label">Over time</p>
+                    <a href="#layer-5" class="mega__entry" data-art="compounding"><span>Compounding</span><small>Learns as you grow</small></a>
+                    <a href="#ways" class="mega__entry" data-art="mcp"><span>JgSaw MCP</span><small>Use JgSaw inside Claude</small></a>
+                  </div>
+                </div>
+                <div class="mega__art">
+                  <div class="mega__stage"><canvas class="mega__canvas" aria-hidden="true"></canvas><i></i><i></i><i></i><i></i></div>
+                  <div class="mega__aside">
+                    <p class="label label--amber">See it on one of your deals</p>
+                    <p class="mega__copy">Send us a deal you're working on and we send back what JgSaw makes of it within one working day.</p>
+                    <a href="#send" class="ghost ghost--amber">Send us a deal →</a>
+                  </div>
+                </div>
               </div>
             </div>
-            <div>
-              <p class="label">Over time</p>
-              <a href="#layer-5" class="mega__entry"><span>Compounding</span><small>Learns as you grow</small></a>
-              <a href="#ways" class="mega__entry"><span>JgSaw MCP</span><small>Use JgSaw inside Claude</small></a>
-            </div>
-            <div class="mega__aside">
-              <p class="label label--amber">See it on one of your deals</p>
-              <p class="mega__copy">Send us a deal you're working on and we send back what JgSaw makes of it within one working day.</p>
-              <a href="#send" class="ghost ghost--amber">Send us a deal →</a>
-            </div>
           </div>
-        </div>
-      </div>
 
-      <div class="nav__item has-menu">
-        <button class="nav__link" aria-expanded="false" aria-haspopup="true">Solutions <span class="caret">▾</span></button>
-        <div class="mega">
-          <div class="mega__grid mega__grid--solutions">
-            <div class="mega__col-wide">
-              <p class="label">Workflows</p>
-              <div class="mega__two">
-                <a href="#ways" class="mega__entry"><span>Agency operations</span><small>Brief to billing, orchestrated on your existing tools</small></a>
-                <a href="#ways" class="mega__entry"><span>Content and creative production</span><small>Brand-governed content at volume, with approval gates</small></a>
-                <a href="#ways" class="mega__entry"><span>PR and media intelligence</span><small>Targeting, pitching, monitoring, crisis readiness and AI search visibility</small></a>
-                <a href="#ways" class="mega__entry"><span>Influencer and creator programmes</span><small>Discovery, vetting, briefing and performance</small></a>
-                <a href="#ways" class="mega__entry"><span>Research and planning</span><small>Audience, category and competitor intelligence</small></a>
-                <a href="#ways" class="mega__entry"><span>Reporting and measurement</span><small>Client reporting and ROI, automated</small></a>
-                <a href="#ways" class="mega__entry"><span>Customer lifecycle workflows</span><small>Support, cross-sell, upsell and customer success</small></a>
+          <div class="nav__item has-menu">
+            <button class="nav__link" aria-expanded="false" aria-haspopup="true">Solutions <span class="caret">▾</span></button>
+            <div class="mega">
+              <div class="mega__panel mega__panel--solutions">
+                <div class="mega__cols">
+                  <span class="mega__hl" aria-hidden="true"></span>
+                  <div class="mega__col-wide">
+                    <p class="label">Workflows</p>
+                    <div class="mega__two">
+                      <a href="#ways" class="mega__entry" data-art="ops"><span>Agency operations</span><small>Brief to billing, orchestrated on your existing tools</small></a>
+                      <a href="#ways" class="mega__entry" data-art="creative"><span>Content and creative production</span><small>Brand-governed content at volume, with approval gates</small></a>
+                      <a href="#ways" class="mega__entry" data-art="pr"><span>PR and media intelligence</span><small>Targeting, pitching, monitoring, crisis readiness and AI search visibility</small></a>
+                      <a href="#ways" class="mega__entry" data-art="influencer"><span>Influencer and creator programmes</span><small>Discovery, vetting, briefing and performance</small></a>
+                      <a href="#ways" class="mega__entry" data-art="research"><span>Research and planning</span><small>Audience, category and competitor intelligence</small></a>
+                      <a href="#ways" class="mega__entry" data-art="reporting"><span>Reporting and measurement</span><small>Client reporting and ROI, automated</small></a>
+                      <a href="#ways" class="mega__entry" data-art="lifecycle"><span>Customer lifecycle workflows</span><small>Support, cross-sell, upsell and customer success</small></a>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="label">By industry</p>
+                    <a href="#ways" class="mega__entry" data-art="industry"><span>Industry verticals</span><small>Any workflow, built for one industry's rules, vocabulary and field teams</small></a>
+                  </div>
+                </div>
+                <div class="mega__art">
+                  <div class="mega__stage"><canvas class="mega__canvas" aria-hidden="true"></canvas><i></i><i></i><i></i><i></i></div>
+                  <div class="mega__aside">
+                    <p class="label label--amber">Built on your intellectual property</p>
+                    <p class="mega__copy">We design and build AI workflows for marketing, communications and advertising businesses, on top of your existing tools and built on your own intellectual property.</p>
+                    <a href="#send" class="ghost ghost--amber">Talk to us about a workflow →</a>
+                  </div>
+                </div>
               </div>
             </div>
-            <div>
-              <p class="label">By industry</p>
-              <a href="#ways" class="mega__entry"><span>Industry verticals</span><small>Any workflow, built for one industry's rules, vocabulary and field teams</small></a>
-            </div>
-            <div class="mega__aside">
-              <p class="label label--amber">Built on your intellectual property</p>
-              <p class="mega__copy">We design and build AI workflows for marketing, communications and advertising businesses, on top of your existing tools and built on your own intellectual property.</p>
-              <a href="#send" class="ghost ghost--amber">Talk to us about a workflow →</a>
-            </div>
           </div>
-        </div>
-      </div>
 
-      <a href="#ways" class="nav__link">Resources</a>
+          <a href="#ways" class="nav__link">Resources</a>
       <a href="#faq" class="nav__link">About</a>
     </nav>
 
@@ -117,7 +129,7 @@
       </div>
     </div>
     <div class="hero__visual">
-      <canvas id="brain" aria-label="A jigsaw puzzle assembling itself, the final piece clicking into place" role="img"></canvas>
+      <canvas id="brain" aria-label="The jgsaw logo gathering from light" role="img"></canvas>
     </div>
   </div>
 </section>
@@ -329,7 +341,7 @@
       <p class="form-msg" role="status" aria-live="polite"></p>
     </form>
     <div class="deal-done" id="dealDone" hidden>
-      <canvas id="dealCanvas" role="img" aria-label="The company's logo, broken into jigsaw pieces, being put back together by JgSaw"></canvas>
+      <canvas id="dealCanvas" role="img" aria-label="A paper plane made of light carrying your deal away"></canvas>
       <div class="deal-done__msg" aria-live="polite">
         <p class="label label--amber">Deal received</p>
         <h3 class="heading">Thank you. Our team will contact you soon.</h3>
@@ -408,6 +420,6 @@
     </form>
   </div>
 </div>
-<script src="main.js?v=1793088503"></script>
+<script src="main.js?v=1793605566"></script>
 </body>
 </html>

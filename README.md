@@ -5,8 +5,9 @@ The JgSaw marketing website: a static site (`index.html`, `styles.css`, `main.js
 ## Run locally
 
 ```bash
-python3 serve.py
-# open http://localhost:4000   (add ?vision=1 to show the popup again)
+python3 serve.py          # http://localhost:4000
+python3 serve.py 3000     # or pick a port
+# open the URL   (add ?vision=1 to show the popup again)
 ```
 
 ## Structure

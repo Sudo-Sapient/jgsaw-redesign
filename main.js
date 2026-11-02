@@ -19,7 +19,7 @@
     const btn = item.querySelector('.nav__link');
     let t;
     const open = () => { clearTimeout(t); closeAll(item); item.classList.add('is-open'); btn.setAttribute('aria-expanded', 'true'); };
-    const close = () => { t = setTimeout(() => { item.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); }, 120); };
+    const close = () => { t = setTimeout(() => { item.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); }, 220); };
     item.addEventListener('mouseenter', open);
     item.addEventListener('mouseleave', close);
     btn.addEventListener('click', () => item.classList.contains('is-open') ? (item.classList.remove('is-open'), btn.setAttribute('aria-expanded','false')) : open());
@@ -97,145 +97,149 @@
   const rand = (a, b) => a + Math.random() * (b - a);
   function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
 
-  /* ---------------- Hero jigsaw puzzle ---------------- */
-  const puzzleCanvas = document.getElementById('brain');
-  if (puzzleCanvas) {
-    const { ctx, resize } = setup(puzzleCanvas);
+  /* ---------------- Hero: the JgSaw logo, assembled from particles ----------------
+     A loose cloud of triangles sweeps in, left to right, and locks into a tidy grid that shows the jgsaw logo:
+     white triangles spell the word, the rest take the logo's own tile colours.
+     A light passes across it, it holds, then drifts apart and gathers again. Click to replay.
+     Once a visitor has given us their company (in the vision popup), every other loop the same cloud
+     gathers into THEIR logo instead, in its own colours: jgsaw, then you, then jgsaw again. */
+  const heroCanvas = document.getElementById('brain');
+  if (heroCanvas) {
+    const { ctx, resize } = setup(heroCanvas);
     const small = window.innerWidth < 700;
-    const N = 3;                       // 3 x 3 puzzle
-    const LAST = 4;                    // centre piece lands last, in violet
-
-    // One jigsaw edge as a polyline in local coords: u along (0..1), v perpendicular
-    function edgeShape(sign) {
-      const pts = [];
-      const line = (u0, v0, u1, v1, n) => { for (let i = 0; i < n; i++) { const k = i / n; pts.push([u0 + (u1 - u0) * k, v0 + (v1 - v0) * k]); } };
-      line(0, 0, 0.37, 0, 14);
-      line(0.37, 0, 0.405, 0.1, 4);
-      const cx = 0.5, cv = 0.19, r = 0.12;
-      const a0 = Math.atan2(0.1 - cv, 0.405 - cx) + Math.PI * 2, a1 = Math.atan2(0.1 - cv, 0.595 - cx);
-      for (let i = 0; i <= 26; i++) { const a = a0 + (a1 - a0) * (i / 26); pts.push([cx + Math.cos(a) * r, cv + Math.sin(a) * r]); }
-      line(0.595, 0.1, 0.63, 0, 4);
-      line(0.63, 0, 1, 0, 14);
-      pts.push([1, 0]);
-      return pts.map(([u, v]) => [u, v * sign]);
-    }
-    // Global edge polylines (grid units). Horizontal edges h[r][c] sit at y=r, vertical v[r][c] at x=c.
-    const sgn = () => (Math.random() < 0.5 ? -1 : 1);
-    const H = [], V = [];
-    for (let r = 0; r <= N; r++) { H[r] = []; for (let c = 0; c < N; c++) {
-      const flat = r === 0 || r === N, sh = edgeShape(flat ? 0 : sgn());
-      H[r][c] = sh.map(([u, v]) => [c + u, r + v]);
-    } }
-    for (let r = 0; r < N; r++) { V[r] = []; for (let c = 0; c <= N; c++) {
-      const flat = c === 0 || c === N, sh = edgeShape(flat ? 0 : sgn());
-      V[r][c] = sh.map(([u, v]) => [c + v, r + u]);
-    } }
-    const inside = (poly, x, y) => {
-      let ins = false;
-      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-        const [xi, yi] = poly[i], [xj, yj] = poly[j];
-        if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) ins = !ins;
-      }
-      return ins;
+    const COLS = small ? 84 : 124;   // the logo becomes a tidy grid of triangles, one per cell
+    const LETTER = '#f6f2ff';   // the logo's dark letters, as light on black so the word reads
+    let pts = null, ratio = 52 / 163, brand = null, brandOn = 0;
+    // the visitor's logo as points in a box whose longest side is 1 (saved by the vision popup)
+    try { const b = JSON.parse(localStorage.getItem('jgsaw_brand') || 'null'); if (b && b.pts && b.pts.length > 40) brand = b; } catch (e) {}
+    // give every particle a spot in the visitor's logo. There are more particles than logo points, so they share,
+    // each a little off the point, which makes the logo dense; the ones left over stay as faint dust.
+    const fitBrand = () => {
+      if (!pts || !brand) return;
+      const bp = brand.pts, n = bp.length;
+      let w = 0, h = 0;
+      for (const q of bp) { w = Math.max(w, Math.abs(q.x) * 2); h = Math.max(h, Math.abs(q.y) * 2); }
+      const sc = Math.min(0.84 / Math.max(w, 0.01), 0.52 / Math.max(h, 0.01));   // big, but never taller than the hero
+      const use = Math.min(pts.length, n * 4);
+      const order = pts.map((_, i) => i).sort(() => Math.random() - 0.5);
+      order.forEach((i, k) => {
+        const p = pts[i];
+        if (k < use) {
+          const q = bp[k % n], j = 0.0022;
+          p.bx = q.x * sc + gauss() * j; p.by = q.y * sc + gauss() * j; p.bc = q.col; p.bdust = false;
+        } else { p.bx = p.sx * 1.15; p.by = p.sy * 1.15; p.bc = '#55555f'; p.bdust = true; }
+      });
     };
-    const resample = (poly, step) => {   // even spacing along the outline
-      const out = [];
-      for (let i = 0; i < poly.length - 1; i++) {
-        const [x0, y0] = poly[i], [x1, y1] = poly[i + 1];
-        const d = Math.hypot(x1 - x0, y1 - y0), n = Math.max(1, Math.round(d / step));
-        for (let k = 0; k < n; k++) out.push([x0 + (x1 - x0) * k / n + gauss() * 0.006, y0 + (y1 - y0) * k / n + gauss() * 0.006]);
+
+    // read the logo's pixels, then keep one particle per grid cell: white for letters, the tile's own colour otherwise
+    const sample = img => {
+      const S = 640, Hh = Math.round(S * ratio);
+      const c = document.createElement('canvas'); c.width = S; c.height = Hh;
+      const x = c.getContext('2d', { willReadFrequently: true });
+      x.drawImage(img, 0, 0, S, Hh);
+      const d = x.getImageData(0, 0, S, Hh).data;
+      const cell = S / COLS, ROWS = Math.floor(Hh / cell), out = [];
+      for (let r = 0; r < ROWS; r++) for (let q = 0; q < COLS; q++) {
+        // look at a few pixels in the cell; letters win ties so the word stays crisp
+        let lit = 0, dark = 0, rs = 0, gs = 0, bs = 0, n = 0;
+        for (let v = 0.25; v < 1; v += 0.25) for (let u = 0.25; u < 1; u += 0.25) {
+          const i = Math.min(S - 1, ((q + u) * cell) | 0), j = Math.min(Hh - 1, ((r + v) * cell) | 0), k = (j * S + i) * 4;
+          if (d[k + 3] < 140) continue;
+          const lum = 0.299 * d[k] + 0.587 * d[k + 1] + 0.114 * d[k + 2];
+          if (lum < 75) dark++; else { lit++; rs += d[k]; gs += d[k + 1]; bs += d[k + 2]; n++; }
+        }
+        if (lit + dark < 5) continue;
+        const isL = dark >= 4;
+        const col = isL ? LETTER : `rgb(${(rs / n) | 0},${(gs / n) | 0},${(bs / n) | 0})`;
+        const tx = (q + 0.5) / COLS - 0.5, ty = (r + 0.5) * cell / S - ratio / 2;
+        const a = Math.random() * 6.283, rr = 0.25 + Math.pow(Math.random(), 0.7) * 0.42;
+        out.push({
+          tx, ty, c: col, letter: isL,
+          sx: Math.cos(a) * rr * 1.05, sy: Math.sin(a) * rr * 0.8,
+          delay: (tx + 0.5) * 1.15 + Math.random() * 0.45,
+          rot: rand(0, 6.28), sp: rand(-1, 1), depth: rand(0.3, 1), ph: rand(0, 6.28),
+        });
       }
       return out;
     };
-
-    const pieceColors = ['#4d7dff', '#ffb829', '#15846e', '#e04dff', '#8052ff', '#2fd1b0', '#ff6fa8', '#a98bff', '#ffd36b'];
-    const pieces = [];
-    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
-      const i = r * N + c;
-      const poly = [
-        ...H[r][c],
-        ...V[r][c + 1],
-        ...H[r + 1][c].slice().reverse(),
-        ...V[r][c].slice().reverse()
-      ];
-      const base = i === LAST ? '#8052ff' : pieceColors[i];
-      const pick = () => (Math.random() < 0.72 ? base : PALETTE[(Math.random() * PALETTE.length) | 0]);
-      const parts = [];
-      resample(poly, small ? 0.03 : 0.02).forEach(([x, y]) => parts.push({ x, y, c: pick(), s: rand(1.6, 3.2), rot: rand(0, 6.28), sp: rand(-1, 1), edge: true }));
-      let tries = 0, fill = small ? 50 : 110;
-      while (fill > 0 && tries++ < 5000) {
-        const x = rand(c - 0.3, c + 1.3), y = rand(r - 0.3, r + 1.3);
-        if (inside(poly, x, y)) { parts.push({ x, y, c: pick(), s: rand(1.2, 2.4), rot: rand(0, 6.28), sp: rand(-1, 1), edge: false }); fill--; }
-      }
-      const cx = c + 0.5, cy = r + 0.5;
-      parts.forEach(p => { p.x -= cx; p.y -= cy; });   // local to piece centre
-      const ang = Math.atan2(cy - 1.5, cx - 1.5) + rand(-0.6, 0.6) + (i === LAST ? rand(0, 6.28) : 0);
-      const dist = rand(0.55, 0.95);
-      pieces.push({
-        i, cx, cy, parts, depth: rand(0.4, 1),
-        sx: cx + Math.cos(ang) * dist, sy: cy + Math.sin(ang) * dist, srot: rand(-0.9, 0.9),
-        order: i === LAST ? N * N - 1 : 0
-      });
-    }
-    // Stagger order for all non-last pieces
-    pieces.filter(p => p.i !== LAST).sort(() => Math.random() - 0.5).forEach((p, k) => p.order = k);
+    const logo = new Image();
+    logo.onload = () => {
+      if (logo.naturalWidth && logo.naturalHeight) ratio = logo.naturalHeight / logo.naturalWidth;
+      try { pts = sample(logo); fitBrand(); } catch (e) { pts = null; }
+    };
+    logo.src = 'jgsaw-logo.svg';
 
     let mx = 0, my = 0, tmx = 0, tmy = 0, visible = true;
-    window.addEventListener('pointermove', e => {
-      tmx = (e.clientX / window.innerWidth - 0.5); tmy = (e.clientY / window.innerHeight - 0.5);
-    }, { passive: true });
-    watchVisible(puzzleCanvas, v => visible = v);
+    window.addEventListener('pointermove', e => { tmx = e.clientX / window.innerWidth - 0.5; tmy = e.clientY / window.innerHeight - 0.5; }, { passive: true });
+    watchVisible(heroCanvas, v => visible = v);
     window.addEventListener('resize', resize);
 
-    // Timeline: scattered -> assemble (staggered) -> hold -> scatter -> repeat
-    const STAG = 0.32, FLY = 1.3;
-    const ASSEMBLE = STAG * (N * N - 2) + FLY + 0.5;   // last piece gets extra beat
-    const HOLD = 4.2, SCATTER = 1.6, DRIFT = 1.4;
-    const CYCLE = 0.6 + ASSEMBLE + HOLD + SCATTER + DRIFT;
+    // timeline (seconds): drift 0-0.7, gather 0.7-3.6, shine + hold to 8.6, drift apart 8.6-10.4, cloud to 11.2
+    const START = 0.7, FLY = 1.3, HOLD_END = 8.6, APART = 1.8, CYCLE = 11.2, SHINE = 4.0;
     let t0 = performance.now();
-    puzzleCanvas.addEventListener('click', () => { t0 = performance.now() - (0.6 + ASSEMBLE + HOLD) * 1000; });
-    const easeOutBack = x => { const c1 = 1.4, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+    heroCanvas.addEventListener('click', () => {
+      const T = (performance.now() - t0) / 1000;
+      t0 = performance.now() - ((Math.floor(T / CYCLE) * CYCLE + HOLD_END) * 1000);
+    });
+    // a visitor just sent their details: let the jgsaw logo drift apart now, and gather into theirs next
+    window.addEventListener('jgsaw:brand', e => {
+      brand = e.detail; fitBrand();
+      const now = performance.now(), T = (now - t0) / 1000, c = Math.floor(T / CYCLE), ct = T - c * CYCLE;
+      if (ct < HOLD_END) t0 -= (HOLD_END - ct) * 1000;            // start drifting apart right away
+      brandOn = c % 2;                                             // the next loop (c + 1) is their logo
+    });
+    const easeOut = x => 1 - Math.pow(1 - x, 3);
     const easeInOut = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-    const clamp01 = x => Math.max(0, Math.min(1, x));
+    const cl = x => Math.max(0, Math.min(1, x));
 
-    const frame = (now) => {
+    const frame = now => {
       requestAnimationFrame(frame);
-      if (!visible) return;
-      const T = (now - t0) / 1000;
-      const ct = reduce ? 0.6 + ASSEMBLE + 1 : T % CYCLE;
+      if (!visible || !pts) return;
+      const T = (now - t0) / 1000, ct = reduce ? 6 : T % CYCLE;
+      // which picture this loop gathers into: jgsaw, or (every other loop, once we know them) the visitor's logo
+      const theirs = !!(brand && !reduce && pts[0].bx !== undefined && (Math.floor(T / CYCLE) + brandOn) % 2 === 1);
       mx += (tmx - mx) * 0.05; my += (tmy - my) * 0.05;
-      const W = puzzleCanvas.width, Hh = puzzleCanvas.height, S = Math.min(W, Hh) * 0.17;
-      const ox = W / 2 - 1.5 * S, oy = Hh / 2 - 1.5 * S;
-      ctx.clearRect(0, 0, W, Hh);
-      ctx.lineWidth = 1 * DPR;
+      const W = heroCanvas.width, H = heroCanvas.height, L = Math.min(W * 0.86, H * 0.86 / ratio);
+      const ox = W / 2, oy = H / 2;
+      ctx.clearRect(0, 0, W, H);
 
-      const aStart = 0.6, sStart = aStart + ASSEMBLE + HOLD;
-      let snapFlash = 0;
-      for (const pc of pieces) {
-        // progress 0 = scattered, 1 = home
+      // how "together" the logo is overall, for the glow behind it
+      const whole = ct < HOLD_END ? cl((ct - START - 1.6) / 1.2) : 1 - cl((ct - HOLD_END) / (APART * 0.7));
+      if (whole > 0) {
+        const g = ctx.createRadialGradient(ox, oy, 0, ox, oy, L * 0.62);
+        if (theirs && brand.glow) g.addColorStop(0, brand.glow.replace('hsl(', 'hsla(').replace(')', `,${0.14 * whole})`));
+        else { g.addColorStop(0, `rgba(234,125,92,${0.13 * whole})`); g.addColorStop(0.5, `rgba(45,154,193,${0.06 * whole})`); }
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      }
+      // a band of light passes across the finished logo, left to right
+      const shineX = ct > SHINE && ct < SHINE + 1.6 ? -0.6 + 1.2 * ((ct - SHINE) / 1.6) : 9;
+
+      ctx.lineWidth = DPR;
+      const cellPx = L / COLS, size = cellPx * 0.36;
+      const UP = -Math.PI / 2;
+      for (const p of pts) {
         let k;
-        if (ct < sStart) {
-          const st = aStart + pc.order * STAG + (pc.i === LAST ? 0.5 : 0);
-          const raw = clamp01((ct - st) / FLY);
-          k = raw <= 0 ? 0 : easeOutBack(raw);
-          if (pc.i === LAST && raw >= 1) snapFlash = Math.max(0, 1 - (ct - st - FLY) / 0.9);
-        } else {
-          k = 1 - easeInOut(clamp01((ct - sStart) / SCATTER));
+        if (ct < HOLD_END) k = easeOut(cl((ct - START - p.delay) / FLY));
+        else k = 1 - easeInOut(cl((ct - HOLD_END - (1 - (p.tx + 0.5)) * 0.5) / APART));
+        const loose = 1 - k;
+        const wob = T * 0.7 + p.ph;
+        const TX = theirs ? p.bx : p.tx, TY = theirs ? p.by : p.ty;
+        const x = p.sx + (TX - p.sx) * k + Math.sin(wob) * 0.012 * loose + mx * p.depth * 0.05 * loose;
+        const y = p.sy + (TY - p.sy) * k + Math.cos(wob * 0.8) * 0.012 * loose + my * p.depth * 0.05 * loose;
+        // the light band: each triangle it touches turns a full third and flashes
+        const w = cl(1 - Math.abs(TX - shineX) / 0.09), sh = w * w;
+        if (!reduce) p.rot += p.sp * 0.03 * loose;
+        const settle = easeInOut(cl((k - 0.75) / 0.25));     // once home, every triangle points the same way
+        const rot = p.rot * (1 - settle) + (UP + sh * 2.0944) * settle;
+        if (theirs) {
+          // their logo: in its own colours; the spare particles stay as faint dust around it
+          const a = (p.bdust ? 0.16 : 0.85) * (0.3 + 0.7 * k) + (p.bdust ? 0 : sh * 0.4);
+          tri(ctx, ox + x * L, oy + y * L, size * (p.bdust ? 0.8 : 0.85) * (1 + sh * 0.5), p.bdust ? p.rot : rot, sh > 0.45 && !p.bdust ? '#ffffff' : p.bc, Math.min(1, a));
+          continue;
         }
-        const idle = (1 - Math.min(1, k)) * 0.06;
-        const wob = T * 0.6 + pc.i;
-        const px = pc.sx + (pc.cx - pc.sx) * k + Math.sin(wob) * idle + mx * pc.depth * 0.12;
-        const py = pc.sy + (pc.cy - pc.sy) * k + Math.cos(wob * 0.8) * idle + my * pc.depth * 0.12;
-        const rot = pc.srot * (1 - k) + (k >= 0.999 ? Math.sin(T * 0.8 + pc.i) * 0.004 : 0);
-        const cr = Math.cos(rot), sr = Math.sin(rot);
-        const fade = 0.55 + 0.45 * Math.min(1, k);
-        const glow = pc.i === LAST ? snapFlash : 0;
-        for (const p of pc.parts) {
-          const lx = p.x * cr - p.y * sr, ly = p.x * sr + p.y * cr;
-          const X = ox + (px + lx) * S, Y = oy + (py + ly) * S;
-          const a = (p.edge ? 0.95 : 0.4) * fade;
-          tri(ctx, X, Y, p.s * DPR * (1 + glow * 0.6), p.rot + T * p.sp * 0.5, glow > 0.05 && p.edge ? '#ffffff' : p.c, Math.min(1, a + glow * 0.4));
-        }
+        const a = (p.letter ? 1 : 0.5) * (0.3 + 0.7 * k) + sh * 0.4;   // tiles sit back so the white word leads
+        tri(ctx, ox + x * L, oy + y * L, size * (p.letter ? 1.1 : 0.9) * (1 + sh * 0.5), rot, sh > 0.45 ? '#ffffff' : p.c, Math.min(1, a));
       }
       ctx.globalAlpha = 1;
     };
@@ -1204,7 +1208,14 @@
         msg.textContent = 'Done. Building your vision board…';
         await wait(500);
         await close('done');
-        showBoard(data, await shapeP);
+        const shape = await shapeP;
+        // the hero shows the visitor's own logo from now on (dull in the mess, bright once aligned)
+        if (shape && shape.pts) {
+          const brandData = { company: data.company, glow: shape.glow, pts: shape.pts.map(p => ({ x: +p.x.toFixed(3), y: +p.y.toFixed(3), col: p.col })) };
+          try { localStorage.setItem('jgsaw_brand', JSON.stringify(brandData)); } catch (e2) {}
+          window.dispatchEvent(new CustomEvent('jgsaw:brand', { detail: brandData }));
+        }
+        showBoard(data, shape);
       } catch (err) {
         pop.classList.remove('is-scanning');
         msg.textContent = err.message && err.message.length < 140 ? err.message : "We couldn't read that website. Please check the address.";
@@ -1364,7 +1375,7 @@
       requestAnimationFrame(frame);
     }
 
-    /* ===== Deal form: send, then the company's logo is put back together as a JgSaw puzzle ===== */
+    /* ===== Deal form: send, then a paper plane made of particles carries it away ===== */
     const dmsg = dealForm.querySelector('.form-msg');
     const done = document.getElementById('dealDone');
     const dcv = document.getElementById('dealCanvas');
@@ -1383,21 +1394,16 @@
       const payload = { company: dealForm.company.value.trim(), url: dealForm.url.value.trim(), offer: dealForm.offer.value.trim(), email: dealForm.email.value.trim() };
       sbtn.disabled = true; sbtn.textContent = 'Sending…'; dmsg.textContent = '';
       try {
-        const logosP = payload.url
-          ? fetch(`/api/logo?url=${encodeURIComponent(payload.url)}`).then(r => r.json()).then(j => j.logos || []).catch(() => [])
-          : Promise.resolve([]);
         const r = await fetch('/api/deal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const j = await r.json().catch(() => ({}));
         if (!r.ok || j.error) throw new Error(j.error || 'We couldn\'t send that. Please try again.');
-        dmsg.textContent = 'Sent. Putting it together…';
-        const shape = await logoShape(await logosP, payload.company, innerWidth < 700 ? 600 : 900);
         dealForm.classList.add('is-leaving');
-        await wait(500);
+        await wait(450);
         dealForm.hidden = true; dealForm.classList.remove('is-leaving');
         done.querySelector('[data-d="note"]').textContent = `We have your ${payload.company} deal. Expect what JgSaw makes of it within one working day.`;
         dtext.classList.remove('is-in');
         done.hidden = false;
-        playPuzzle(shape, () => dtext.classList.add('is-in'));
+        playSent(() => dtext.classList.add('is-in'));
       } catch (err) {
         dmsg.textContent = err.message;
       } finally {
@@ -1405,92 +1411,241 @@
       }
     });
     done.querySelector('[data-d="again"]').addEventListener('click', () => {
-      stopPuzzle();
+      stopSent();
       done.hidden = true; dealForm.reset(); dmsg.textContent = ''; dealForm.hidden = false;
       dealForm.company.focus();
     });
 
-    // one jigsaw edge (u along 0..1, v sideways), same shape as the hero puzzle
-    function jigEdge(sign) {
-      const pts = [];
-      const line = (u0, v0, u1, v1, n) => { for (let i = 0; i < n; i++) { const k = i / n; pts.push([u0 + (u1 - u0) * k, v0 + (v1 - v0) * k]); } };
-      line(0, 0, 0.37, 0, 14); line(0.37, 0, 0.405, 0.1, 4);
-      const cx = 0.5, cv = 0.19, r = 0.12;
-      const a0 = Math.atan2(0.1 - cv, 0.405 - cx) + Math.PI * 2, a1 = Math.atan2(0.1 - cv, 0.595 - cx);
-      for (let i = 0; i <= 26; i++) { const a = a0 + (a1 - a0) * (i / 26); pts.push([cx + Math.cos(a) * r, cv + Math.sin(a) * r]); }
-      line(0.595, 0.1, 0.63, 0, 4); line(0.63, 0, 1, 0, 14); pts.push([1, 0]);
-      return pts.map(([u, v]) => [u, v * sign]);
-    }
-    let pRaf = 0;
-    const stopPuzzle = () => { cancelAnimationFrame(pRaf); pRaf = 0; };
-    function playPuzzle(shape, onDone) {
-      stopPuzzle();
+    let sRaf = 0;
+    const stopSent = () => { cancelAnimationFrame(sRaf); sRaf = 0; };
+    /* Triangles gather into a paper plane, it leans back, then glides up and away to the top right,
+       leaving a dotted flight path that stays behind as a quiet trace. */
+    function playSent(onDone) {
+      stopSent();
       const { ctx } = setup(dcv);
-      const ratio = shape.w / Math.max(shape.h, 0.01);
-      const C = ratio > 2 ? 4 : 3, R = ratio > 2 ? 2 : ratio < 0.5 ? 4 : 3;
-      const pad = 0.06, gw = shape.w + pad * 2, gh = shape.h + pad * 2;
-      const toL = (gx, gy) => [-gw / 2 + gx * gw / C, -gh / 2 + gy * gh / R];
-      const sgn = () => (Math.random() < 0.5 ? -1 : 1);
-      const Hs = [], Vs = [];
-      for (let r = 0; r <= R; r++) { Hs[r] = []; for (let c = 0; c < C; c++) Hs[r][c] = jigEdge(r === 0 || r === R ? 0 : sgn()).map(([u, v]) => toL(c + u, r + v * 0.8)); }
-      for (let r = 0; r < R; r++) { Vs[r] = []; for (let c = 0; c <= C; c++) Vs[r][c] = jigEdge(c === 0 || c === C ? 0 : sgn()).map(([u, v]) => toL(c + v * 0.8, r + u)); }
-      const pieces = [];
-      for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
-        const [x0, y0] = toL(c, r), [x1, y1] = toL(c + 1, r + 1), pcx = (x0 + x1) / 2, pcy = (y0 + y1) / 2;
-        const parts = [];
-        shape.pts.forEach(p => { if (p.x >= x0 && p.x < x1 && p.y >= y0 && p.y < y1) parts.push({ x: p.x - pcx, y: p.y - pcy, col: p.col, edge: false, s: rand(1.2, 2.6), rot: rand(0, 6.28) }); });
-        const poly = [...Hs[r][c], ...Vs[r][c + 1], ...Hs[r + 1][c].slice().reverse(), ...Vs[r][c].slice().reverse()];
-        for (let i = 0; i < poly.length - 1; i++) {
-          const [ax, ay] = poly[i], [bx, by] = poly[i + 1], n = Math.max(1, Math.round(Math.hypot(bx - ax, by - ay) / 0.012));
-          for (let k = 0; k < n; k++) parts.push({ x: ax + (bx - ax) * k / n - pcx + gauss() * 0.002, y: ay + (by - ay) * k / n - pcy + gauss() * 0.002,
-            col: (i + k) % 3 ? '#8052ff' : '#ffb829', edge: true, s: rand(1, 1.8), rot: rand(0, 6.28) });
-        }
-        const ang = Math.atan2(pcy, pcx) + rand(-0.6, 0.6), dist = rand(0.16, 0.3);
-        pieces.push({ pcx, pcy, parts, sx: pcx + Math.cos(ang) * dist * 1.4, sy: pcy + Math.sin(ang) * dist * 0.7, srot: rand(-1.1, 1.1), order: 0 });
-      }
-      pieces.sort(() => Math.random() - 0.5).forEach((p, k) => { p.order = k; });
-      const STAG = 0.28, FLY = 1.0, START = 0.5;
-      const D = START + (pieces.length - 1) * STAG + FLY;
-      const easeOutBack = x => { const c1 = 1.3, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
-      let t0 = performance.now(), told = false;
+      // paper plane (send icon, nose up-right), 24-unit box -> centred, size ~1
+      const P = { A: [22, 2], B: [2, 9], C: [15, 22], D: [11, 13] };
+      for (const k in P) P[k] = [(P[k][0] - 12) / 20, (P[k][1] - 12) / 20];
+      const NOSE = Math.atan2(P.A[1], P.A[0]);   // which way the icon points
+      const parts = [];
+      const line = (a, b, step, mk) => { const n = Math.max(2, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / step)); for (let i = 0; i <= n; i++) mk(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n); };
+      const inTri = (a, b, c) => { let u = Math.random(), v = Math.random(); if (u + v > 1) { u = 1 - u; v = 1 - v; } return [a[0] + (b[0] - a[0]) * u + (c[0] - a[0]) * v, a[1] + (b[1] - a[1]) * u + (c[1] - a[1]) * v]; };
+      const add = (x, y, c, s, edge) => parts.push({ x: x + gauss() * 0.006, y: y + gauss() * 0.006, c, s, edge, rot: rand(0, 6.28), sp: rand(-1, 1),
+        sx: rand(-0.45, 0.45), sy: rand(-0.3, 0.45), delay: Math.random() * 0.4 });
+      const small = innerWidth < 700;
+      const edgeCol = () => (Math.random() < 0.75 ? '#f3efff' : '#ffb829');
+      [[P.A, P.B], [P.B, P.D], [P.D, P.C], [P.C, P.A]].forEach(([a, b]) => line(a, b, small ? 0.022 : 0.014, (x, y) => add(x, y, edgeCol(), rand(1.3, 2.4), true)));
+      line(P.A, P.D, small ? 0.02 : 0.012, (x, y) => add(x, y, '#ffffff', rand(1.2, 2.2), true));   // the fold
+      for (let i = 0; i < (small ? 120 : 230); i++) { const [x, y] = inTri(P.A, P.B, P.D); add(x, y, Math.random() < 0.8 ? '#cfc4ff' : PALETTE[(Math.random() * PALETTE.length) | 0], rand(1, 2), false); }
+      for (let i = 0; i < (small ? 110 : 210); i++) { const [x, y] = inTri(P.A, P.D, P.C); add(x, y, Math.random() < 0.8 ? '#8052ff' : PALETTE[(Math.random() * PALETTE.length) | 0], rand(1, 2), false); }
+      // flight path in canvas fractions (cubic bezier) from the launch spot out past the top right
+      const B0 = [0.24, 0.66], B1 = [0.46, 0.82], B2 = [0.72, 0.3], B3 = [1.2, -0.25];
+      const bez = t => { const u = 1 - t; return [0, 1].map(i => u * u * u * B0[i] + 3 * u * u * t * B1[i] + 3 * u * t * t * B2[i] + t * t * t * B3[i]); };
+      const tan = t => { const u = 1 - t; return [0, 1].map(i => 3 * u * u * (B1[i] - B0[i]) + 6 * u * t * (B2[i] - B1[i]) + 3 * t * t * (B3[i] - B2[i])); };
+      const trail = [];
+      const GATHER = 1.15, LEAN = 1.65, FLY = 1.9, DONE_AT = 2.5, END = 6.5;
+      const easeOut = x => 1 - Math.pow(1 - x, 3);
+      let told = false, t0 = performance.now(), last = t0, lastEmit = 0;
       const frame = now => {
-        pRaf = requestAnimationFrame(frame);
         const W = dcv.width, H = dcv.height;
-        const T = reduce ? D + 3 : (now - t0) / 1000;
-        if (!told && T > D + 0.4) { told = true; onDone(); }
-        const L = Math.min(W * 0.62 / Math.max(gw + 0.42, 0.3), H * 0.8 / Math.max(gh + 0.4, 0.3)) * 1.25;   // leaves room for the scattered pieces
-        const ox = W / 2, oy = H * 0.47;
-        ctx.clearRect(0, 0, W, H);
-        const glow = clamp01((T - D) / 0.4) * (1 - 0.6 * clamp01((T - D - 0.6) / 1.2));
-        if (glow > 0) {
-          const g = ctx.createRadialGradient(ox, oy, 0, ox, oy, Math.max(gw, gh) * L * 0.75);
-          const gc = shape.glow || 'hsl(255,100%,66%)';
-          g.addColorStop(0, gc.replace('hsl(', 'hsla(').replace(')', `,${0.3 * glow})`)); g.addColorStop(1, gc.replace('hsl(', 'hsla(').replace(')', ',0)'));
-          ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+        const T = reduce ? END : (now - t0) / 1000, dt = Math.min(0.05, (now - last) / 1000); last = now;
+        if (!told && T > DONE_AT) { told = true; onDone(); }
+        const S = Math.min(W, H) * 0.3;   // plane half-size in px
+        ctx.clearRect(0, 0, W, H); ctx.lineWidth = DPR;
+        // where the plane is
+        const f = T < LEAN ? 0 : Math.min(1.2, Math.pow((T - LEAN) / FLY, 1.55));
+        const ft = Math.min(1, f);
+        const [bx, by] = bez(ft), [tx, ty] = tan(Math.max(0.001, ft));
+        const lean = T > GATHER && T < LEAN ? Math.sin((T - GATHER) / (LEAN - GATHER) * Math.PI) : 0;   // little lean back before take-off
+        const ang = Math.atan2(ty * H, tx * W) - NOSE + (T < LEAN ? 0.18 * lean : 0);
+        const restAng = Math.atan2(tan(0.001)[1] * H, tan(0.001)[0] * W) - NOSE;
+        const A = T < LEAN ? restAng + 0.18 * lean : ang;
+        const sc = (1 - 0.4 * ft) * (1 + 0.04 * lean);
+        const cx = bx * W - (T < LEAN ? lean * 6 * DPR : 0), cy = by * H + (T < GATHER ? 0 : Math.sin(T * 3) * 2 * DPR * (1 - ft));
+        const cs = Math.cos(A), sn = Math.sin(A);
+        // trail: emitted from the tail while flying; settles into a faint dotted path that stays
+        if (T > LEAN && ft < 1 && !reduce) {
+          const tailX = cx - Math.cos(A + NOSE) * S * sc * 0.55, tailY = cy - Math.sin(A + NOSE) * S * sc * 0.55;
+          while (lastEmit < T) {
+            lastEmit += 0.012;
+            trail.push({ x: tailX + gauss() * 2 * DPR, y: tailY + gauss() * 2 * DPR, born: T, c: Math.random() < 0.6 ? '#8052ff' : Math.random() < 0.5 ? '#ffb829' : '#f3efff', s: rand(0.9, 1.8), rot: rand(0, 6.28), vy: rand(2, 9) * DPR });
+          }
+        } else lastEmit = T;
+        if (reduce && !trail.length) for (let i = 0; i < 140; i++) { const [x, y] = bez(i / 139); trail.push({ x: x * W, y: y * H, born: -9, c: '#8052ff', s: 1.4, rot: rand(0, 6.28), vy: 0 }); }
+        for (const p of trail) {
+          const age = T - p.born, a = age < 0.15 ? 0.9 : Math.max(0.2, 0.9 - (age - 0.15) * 0.55);
+          const yy = p.y + Math.min(age, 1.4) * p.vy;
+          tri(ctx, p.x, yy, p.s * DPR, p.rot + age * 0.6, p.c, a * (0.7 + 0.3 * Math.sin(T * 2 + p.rot)));
         }
-        const seam = T < D ? 0.8 : 0.8 - 0.68 * clamp01((T - D) / 0.9);   // outlines fade once the logo is whole
-        ctx.lineWidth = DPR;
-        for (const pc of pieces) {
-          const s0 = START + pc.order * STAG;
-          const k = clamp01((T - s0) / FLY), e = k === 0 ? 0 : easeOutBack(k);
-          const appear = clamp01(T / 0.5);
-          const px = pc.sx + (pc.pcx - pc.sx) * e, py = pc.sy + (pc.pcy - pc.sy) * e, rot = pc.srot * (1 - Math.min(1, e));
-          const cs = Math.cos(rot), sn = Math.sin(rot);
-          const lit = clamp01((T - s0 - FLY) / 0.45);   // the piece lights up once it snaps in
-          const flash = lit > 0 && lit < 1 ? Math.sin(lit * Math.PI) : 0;
-          for (const q of pc.parts) {
-            const x = ox + (px + q.x * cs - q.y * sn) * L, y = oy + (py + q.x * sn + q.y * cs) * L;
-            if (q.edge) { tri(ctx, x, y, q.s * DPR, q.rot, q.col, seam * appear); continue; }
-            const col = lit > 0.35 ? q.col : DULL;
-            const a = (0.3 + 0.62 * lit + 0.1 * flash) * appear;
-            if (!reduce) q.rot += 0.01 * (1 - lit * 0.8);
-            tri(ctx, x, y, q.s * DPR * (1 + 0.35 * flash), q.rot, col, a);
+        // the plane
+        if (ft < 1) {
+          for (const q of parts) {
+            const k = easeOut(Math.max(0, Math.min(1, (T - q.delay) / (GATHER - 0.4))));
+            const lx = q.x * sc, ly = q.y * sc;
+            const hx = cx + (lx * cs - ly * sn) * S, hy = cy + (lx * sn + ly * cs) * S;
+            const x = W / 2 + q.sx * W + (hx - W / 2 - q.sx * W) * k, y = H / 2 + q.sy * H + (hy - H / 2 - q.sy * H) * k;
+            if (!reduce) q.rot += q.sp * 0.03 * (1 - k * 0.8);
+            const fade = ft > 0.75 ? 1 - (ft - 0.75) / 0.25 : 1;
+            tri(ctx, x, y, q.s * DPR * (0.7 + 0.3 * sc), q.rot, q.c, (q.edge ? 0.95 : 0.6) * (0.3 + 0.7 * k) * fade);
           }
         }
         ctx.globalAlpha = 1;
+        if (T < END) sRaf = requestAnimationFrame(frame); else sRaf = 0;
       };
-      pRaf = requestAnimationFrame(frame);
+      sRaf = requestAnimationFrame(frame);
     }
+  })();
+
+  /* ---------------- Mega menu: gliding row highlight + a particle picture per link ----------------
+     Hover a link and the picture on the right rebuilds itself into that item, top to bottom,
+     from the same outlined triangles the rest of the site uses. */
+  (() => {
+    const panels = [...document.querySelectorAll('.mega__panel')];
+    if (!panels.length) return;
+    const isOpen = el => el.closest('.nav__item').classList.contains('is-open');
+
+    /* ---- point sets (x, y in -0.5..0.5, z small); 2D icons are stroked offscreen and sampled ---- */
+    const N = 760;
+    const strokeSample = (draw, n) => {
+      const S = 220, c = document.createElement('canvas'); c.width = c.height = S;
+      const g = c.getContext('2d'); g.setTransform(S / 24, 0, 0, S / 24, 0, 0);
+      g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = '#fff';
+      draw(g);
+      const d = g.getImageData(0, 0, S, S).data, on = [];
+      for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (d[(y * S + x) * 4 + 3] > 140) on.push([x / S - 0.5, y / S - 0.5]);
+      return Array.from({ length: n }, () => { const q = on[(Math.random() * on.length) | 0] || [0, 0]; return [q[0] + gauss() * 0.003, q[1] + gauss() * 0.003, gauss() * 0.025]; });
+    };
+    const icon = (paths, lw = 1.6) => n => strokeSample(g => { g.lineWidth = lw; for (const p of paths) g.stroke(new Path2D(p)); }, n);
+    const from3D = (fn, k = 1) => n => fn(n).map(p => [p.x * k, p.y * k, p.z * k]);
+    const mix = (...parts) => n => { const out = []; parts.forEach(([f, share, accent]) => f(Math.round(n * share)).forEach(p => out.push(accent ? [...p, 1] : p))); return out.slice(0, n); };
+
+    const brain = icon(['M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z', 'M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z', 'M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4', 'M17.599 6.5a3 3 0 0 0 .399-1.375', 'M6.003 5.125A3 3 0 0 0 6.401 6.5', 'M3.477 10.896a4 4 0 0 1 .585-.396', 'M19.938 10.5a4 4 0 0 1 .585.396', 'M6 18a4 4 0 0 1-1.967-.516', 'M19.967 17.484A4 4 0 0 1 18 18'], 1.3);
+    const litCore = n => Array.from({ length: n }, () => { const r = Math.abs(gauss()) * 0.05; const a = rand(0, 6.283); return [Math.cos(a) * r, Math.sin(a) * r + 0.02, gauss() * 0.03]; });
+    const roadEdges = n => strokeSample(g => {
+      g.lineWidth = 4.4; g.stroke(new Path2D('M2.5 5l4.7 13.5L12 8.5l4.8 10L21.5 5'));
+      g.globalCompositeOperation = 'destination-out'; g.lineWidth = 2.8; g.stroke(new Path2D('M2.5 5l4.7 13.5L12 8.5l4.8 10L21.5 5'));
+    }, n);
+    const roadDash = n => strokeSample(g => { g.lineWidth = 0.5; g.setLineDash([0.9, 0.9]); g.stroke(new Path2D('M2.5 5l4.7 13.5L12 8.5l4.8 10L21.5 5')); }, n);
+    const towers = n => {
+      const T = [[-0.3, 2], [0, 3], [0.3, 4]], s = 0.16, out = [];
+      const E = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+      const blocks = []; T.forEach(([x, h]) => { for (let k = 0; k < h; k++) blocks.push([x, 0.36 - s / 2 - k * s * 1.02]); });
+      for (let i = 0; i < n; i++) {
+        const [bx, by] = blocks[(Math.random() * blocks.length) | 0], h = s * 0.47;
+        const V = [[-h,-h,-h],[h,-h,-h],[h,-h,h],[-h,-h,h],[-h,h,-h],[h,h,-h],[h,h,h],[-h,h,h]];
+        const [a, b] = E[(Math.random() * 12) | 0], t = Math.random();
+        out.push([bx + V[a][0] + (V[b][0] - V[a][0]) * t, by + V[a][1] + (V[b][1] - V[a][1]) * t, V[a][2] + (V[b][2] - V[a][2]) * t]);
+      }
+      return out;
+    };
+    const handshake = n => Array.from({ length: n }, () => { const q = ANIM.burst.HANDSHAKE[(Math.random() * ANIM.burst.HANDSHAKE.length) | 0]; return [q[0] * 0.95 + gauss() * 0.003, q[1] * 0.95 + gauss() * 0.003, gauss() * 0.02]; });
+
+    const ART = {
+      core:        { make: mix([brain, 0.8], [litCore, 0.2, true]), cols: ['#a98bff', '#8052ff', '#4d7dff'], spin: 0 },
+      road:        { make: mix([roadEdges, 0.78], [roadDash, 0.22, true]), cols: ['#ffffff', '#bdbdbd', '#a98bff'], spin: 0 },
+      craft:       { make: from3D(SHAPES.grid, 0.62), cols: ['#8052ff', '#a98bff', '#4d7dff', '#2fd1b0'], spin: 1 },
+      generation:  { make: from3D(SHAPES.burst, 0.62), cols: ['#ffb829', '#ff6fa8', '#8052ff', '#2fd1b0'], spin: 1 },
+      deals:       { make: handshake, cols: ['#ffb829', '#ffd36b', '#ffffff'], spin: 0 },
+      campaigns:   { make: icon(ANIM.burst.ICONS[1], 1.8), cols: ['#2fd1b0', '#15846e', '#ffffff'], spin: 0 },
+      content:     { make: icon(ANIM.burst.ICONS[2], 1.6), cols: ['#ff6fa8', '#e04dff', '#ffffff'], spin: 0 },
+      compounding: { make: towers, cols: ['#2fd1b0', '#15846e', '#a98bff'], spin: 1 },
+      mcp:         { make: icon(['M12 22v-5', 'M9 8V2', 'M15 8V2', 'M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z']), cols: ['#ffb829', '#8052ff', '#ffffff'], spin: 0 },
+      ops:         { make: icon(['M3 3h6v6H3z', 'M15 15h6v6h-6z', 'M15 3h6v6h-6z', 'M9 6h6', 'M18 9v6']), cols: ['#8052ff', '#a98bff', '#ffffff'], spin: 0 },
+      creative:    { make: icon(['M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z', 'm18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18', 'm2.3 2.3 7.286 7.286', 'M13 11a2 2 0 1 1-4 0a2 2 0 1 1 4 0'], 1.4), cols: ['#ff6fa8', '#ffb829', '#ffffff'], spin: 0 },
+      pr:          { make: icon(['m3 11 18-5v12L3 14v-3z', 'M11.6 16.8a3 3 0 1 1-5.8-1.6']), cols: ['#ffb829', '#ffd36b', '#ffffff'], spin: 0 },
+      influencer:  { make: icon(['M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2', 'M13 7a4 4 0 1 1-8 0a4 4 0 1 1 8 0', 'M22 21v-2a4 4 0 0 0-3-3.87', 'M16 3.13a4 4 0 0 1 0 7.75']), cols: ['#e04dff', '#a98bff', '#ffffff'], spin: 0 },
+      research:    { make: icon(['M19 11a8 8 0 1 1-16 0a8 8 0 1 1 16 0', 'm21 21-4.3-4.3']), cols: ['#4d7dff', '#a98bff', '#ffffff'], spin: 0 },
+      reporting:   { make: icon(['M3 3v18h18', 'M18 17V9', 'M13 17V5', 'M8 17v-3']), cols: ['#2fd1b0', '#ffb829', '#ffffff'], spin: 0 },
+      lifecycle:   { make: icon(['M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8', 'M21 3v5h-5', 'M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16', 'M8 16H3v5']), cols: ['#15846e', '#2fd1b0', '#ffffff'], spin: 0 },
+      industry:    { make: icon(['M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z', 'M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2', 'M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2', 'M10 6h4', 'M10 10h4', 'M10 14h4', 'M10 18h4']), cols: ['#a98bff', '#4d7dff', '#ffffff'], spin: 0 },
+    };
+    const cache = {};
+    const targets = key => cache[key] || (cache[key] = ART[key].make(N));
+
+    panels.forEach(panel => {
+      const canvas = panel.querySelector('.mega__canvas');
+      const cols = panel.querySelector('.mega__cols');
+      const hl = panel.querySelector('.mega__hl');
+      const links = [...panel.querySelectorAll('[data-art]')];
+      const { ctx } = setup(canvas);
+      const P = Array.from({ length: N }, () => ({
+        x: gauss() * 0.3, y: gauss() * 0.3, z: gauss() * 0.3, fx: 0, fy: 0, fz: 0, tx: 0, ty: 0, tz: 0,
+        d: 0, s: rand(1.0, 1.9), rot: rand(0, 6.28), vr: rand(-1, 1) * 0.8, c: '#fff', acc: 0,
+      }));
+      let cur = null, t0 = 0, running = false, last = 0;
+
+      const show = key => {
+        if (key === cur || !ART[key]) return;
+        cur = key;
+        const T = targets(key), cl = ART[key].cols, now = performance.now() / 1000;
+        // pair old and new points by angle so each one travels a short path, then build top to bottom
+        const ang = (x, y) => Math.atan2(y, x);
+        const A = P.map((p, i) => [ang(p.x, p.y), i]).sort((a, b) => a[0] - b[0]);
+        const B = T.map((q, i) => [ang(q[0], q[1]), i]).sort((a, b) => a[0] - b[0]);
+        A.forEach(([, i], k) => {
+          const p = P[i], q = T[B[k % B.length][1]];
+          p.fx = p.x; p.fy = p.y; p.fz = p.z; p.tx = q[0]; p.ty = q[1]; p.tz = q[2];
+          p.acc = q[3] ? 1 : 0;
+          p.c = p.acc ? '#ffb829' : cl[(Math.random() * cl.length) | 0];
+          p.d = (q[1] + 0.5) * 0.45 + Math.random() * 0.12;
+        });
+        t0 = now;
+        if (!running) { running = true; last = now; requestAnimationFrame(frame); }
+      };
+
+      const frame = ms => {
+        const now = ms / 1000;
+        if (!isOpen(panel) && now - last > 0.4) { running = false; return; }
+        if (isOpen(panel)) last = now;
+        const W = canvas.width, H = canvas.height, sc = Math.min(W, H) * 0.86;
+        ctx.clearRect(0, 0, W, H);
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineWidth = 1 * DPR;
+        const t = now - t0, spin = cur && ART[cur].spin;
+        const ry = spin ? now * 0.5 : Math.sin(now * 0.7) * 0.32, cy = Math.cos(ry), sy = Math.sin(ry), rx = -0.18;
+        // a faint glow behind the picture
+        const gr = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, sc * 0.55);
+        gr.addColorStop(0, 'rgba(128,82,255,0.10)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.globalAlpha = 1; ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+        for (const p of P) {
+          const k = reduce ? 1 : easeIO(clamp01((t - p.d) / 0.62));
+          const puff = Math.sin(Math.PI * k) * 0.1;
+          p.x = p.fx + (p.tx - p.fx) * k; p.y = p.fy + (p.ty - p.fy) * k; p.z = p.fz + (p.tz - p.fz) * k;
+          let x = p.x * (1 + puff), y = p.y * (1 + puff), z = p.z * (1 + puff);
+          const x1 = x * cy + z * sy, z1 = -x * sy + z * cy;
+          const y1 = y * Math.cos(rx) - z1 * Math.sin(rx), z2 = y * Math.sin(rx) + z1 * Math.cos(rx);
+          const f = 2.6 / (2.6 + z2);
+          p.rot += p.vr * 0.016;
+          const a = (0.4 + 0.6 * k) * (p.acc ? 1 : 0.85) * Math.min(1, f);
+          tri(ctx, W / 2 + x1 * sc * f, H / 2 + y1 * sc * f, p.s * DPR * f * (p.acc ? 1.15 : 1), p.rot, p.c, a);
+        }
+        ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+        requestAnimationFrame(frame);
+      };
+
+      // the soft row highlight glides to whichever link you point at
+      const glide = a => {
+        const r = a.getBoundingClientRect(), c = cols.getBoundingClientRect();
+        hl.style.transform = `translate(${r.left - c.left}px, ${r.top - c.top}px)`;
+        hl.style.width = r.width + 'px'; hl.style.height = r.height + 'px';
+        if (!hl.classList.contains('is-on')) { hl.style.transition = 'none'; hl.offsetWidth; hl.style.transition = ''; hl.classList.add('is-on'); }
+      };
+      links.forEach(a => {
+        const go = () => { links.forEach(l => l.classList.toggle('is-active', l === a)); glide(a); show(a.dataset.art); };
+        a.addEventListener('mouseenter', go);
+        a.addEventListener('focus', go);
+      });
+      cols.addEventListener('mouseleave', () => { hl.classList.remove('is-on'); links.forEach(l => l.classList.remove('is-active')); });
+
+      // when the menu opens, start on the first item's picture
+      const item = panel.closest('.nav__item');
+      new MutationObserver(() => {
+        if (item.classList.contains('is-open')) {
+          if (!cur) { P.forEach(p => { p.x = gauss() * 0.35; p.y = gauss() * 0.35; p.z = gauss() * 0.2; }); show(links[0].dataset.art); }
+          else if (!running) { running = true; last = performance.now() / 1000; requestAnimationFrame(frame); }
+        } else { hl.classList.remove('is-on'); links.forEach(l => l.classList.remove('is-active')); }
+      }).observe(item, { attributes: true, attributeFilter: ['class'] });
+    });
   })();
 
   /* ---------------- Ambient field ---------------- */

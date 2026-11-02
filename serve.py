@@ -1,4 +1,4 @@
-"""JgSaw local dev server (http://localhost:4000).
+"""JgSaw local dev server (http://localhost:4000, or another port: `python3 serve.py 3000`).
 
 Serves the static site with no caching and the same /api routes that run on Vercel
 (the logic lives in api/_gtm.py). Deals are saved to deals.jsonl here.
@@ -13,7 +13,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(ROOT, "api"))
 import _gtm  # noqa: E402
 
-PORT = 4000
+PORT = int(os.environ.get("PORT") or (sys.argv[1] if len(sys.argv) > 1 else 4000))
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
