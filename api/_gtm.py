@@ -281,6 +281,7 @@ def analyse(company, url):
         "ai": None,
     }
     result["logos"] = find_logo(final_url, html)
+    result["icons"] = find_icons(final_url, html, root)
     result["ai"] = enrich(result, text)
     return result
 
@@ -467,6 +468,35 @@ def find_logo(final_url, html):
     return found
 
 
+def find_icons(final_url, html, root):
+    """The company's small square mark (Nike's swoosh, Stripe's S): their own site icons first, best quality
+    first (vector, then big PNGs), then a 256px favicon from Google. Used as the mark inside each section's picture."""
+    cands = []
+    for m in re.finditer(r"<link\b[^>]*rel=\"([^\"]*icon[^\"]*)\"[^>]*>", html or "", re.I):
+        tag, rel = m.group(0), m.group(1).lower()
+        href = re.search(r'href="([^"]+)"', tag)
+        if not href:
+            continue
+        hv = href.group(1).replace("&amp;", "&")
+        size = re.search(r'sizes="(\d+)', tag)
+        px = int(size.group(1)) if size else (180 if "apple" in rel else 0)
+        low = hv.lower().split("?")[0]
+        if low.endswith(".ico"):
+            continue
+        sc = (60 if low.endswith(".svg") else 0) + (20 if "mask" in rel else 0) + min(50, px // 4)
+        cands.append((sc, urllib.parse.urljoin(final_url, hv)))
+    urls = [u for _, u in sorted(cands, key=lambda c: -c[0])][:3]
+    urls.append(f"https://www.google.com/s2/favicons?domain={root}&sz=256")
+    found = []
+    for u in urls:
+        d = fetch_image(u)
+        if d and d not in found:
+            found.append(d)
+        if len(found) >= 3:
+            break
+    return found
+
+
 def service_logos(host):
     """Public logo services: work even when the company's own site blocks us."""
     root = host[4:] if host.startswith("www.") else host
@@ -493,7 +523,7 @@ def limited(company, url):
         "company": company or root.split(".")[0].title(), "url": url, "domain": root, "limited": True,
         "headline": "", "description": "", "model": "", "ctas": [], "social": [], "tech": [],
         "channels": {}, "proof": {}, "scores": {}, "overall": 50, "gaps": [], "messages": [],
-        "logos": logos_only(root), "ai": None,
+        "logos": logos_only(root), "icons": find_icons(url, "", root), "ai": None,
     }
 
 

@@ -462,3 +462,71 @@ main, footer, .nav { position: relative; z-index: 1; }
 }
 @media (min-width: 901px) and (max-width: 1240px) { .hero__visual { width: 112%; margin-left: -6%; } }
 @media (max-width: 1080px) { button.mm__head { padding: 0; } }
+
+/* ---------- Persona: the page made for the visitor's company ---------- */
+.persona-line { margin-top: 16px; padding-left: 14px; border-left: 2px solid var(--brand, var(--color-saffron-spark));
+  font-size: 15px; line-height: 1.5; color: var(--color-bone-white); opacity: 0; transform: translateY(6px);
+  transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); }
+.persona-line.is-on { opacity: 1; transform: none; }
+.persona-reset { margin-top: 18px; font-size: 12px; color: #8a8a8a; }
+.persona-reset button { font: inherit; color: #bdbdbd; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.persona-reset button:hover { color: #fff; }
+html.pbuild-on { overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { .persona-line { transition: none; } }
+.persona-reset a { color: #bdbdbd; margin-right: 10px; }
+.persona-reset a:hover { color: #fff; }
+
+/* ---------- Front door: the popup is required before the site opens ---------- */
+html.gate-on { overflow: hidden; }
+.vpop.is-gate { background: rgba(0,0,0,.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.vpop.is-gate .vpop__close { display: none; }
+.vpop__anyway { font: inherit; color: #fff; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.vpop__anyway:disabled { opacity: .5; cursor: default; }
+
+/* ---------- Full-screen loader (scan → their logo → their page) ---------- */
+.pload { position: fixed; inset: 0; z-index: 200; background: #000; display: grid; place-items: center; align-content: center;
+  padding: 24px; text-align: center; opacity: 0; transition: opacity .45s ease; }
+.pload.is-in { opacity: 1; }
+.pload.is-out { opacity: 0; transition: opacity .7s ease; pointer-events: none; }
+.pload__art { width: min(52vh, 86vw); height: min(52vh, 86vw); display: block; }
+.pload__text { max-width: 520px; display: grid; gap: 10px; justify-items: center; margin-top: 6px; }
+.pload__title { font-weight: 400; letter-spacing: -0.04em; margin: 0; }
+.pload__step, .pload__fact, .pload__title { transition: opacity .26s ease, transform .26s ease; }
+.pload__step { margin: 0; }
+.pload__fact { margin: 6px 0 0; min-height: 3em; font-size: 15px; line-height: 1.5; }
+.is-swap { opacity: 0; transform: translateY(4px); }
+@media (max-width: 560px) { .pload__fact { font-size: 14px; } }
+
+/* ---------- Five layers strip (under the hero): the ribbon + a row of five ---------- */
+.lstrip { padding: clamp(16px, 3vw, 40px) 0 clamp(80px, 10vw, 150px); }
+.lstrip__art { display: block; width: 100%; height: clamp(200px, 21vw, 290px); }
+.lstrip__row { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid rgba(255,255,255,.1); }
+.lx { --dur: 4.2s; position: relative; display: block; padding: 22px 20px 0 0; color: inherit; text-decoration: none; }
+.lx::before { content: ""; position: absolute; left: 0; right: 20px; top: -1px; height: 1px; background: #fff; transform: scaleX(0); transform-origin: left; }
+.lx.is-active::before { animation: lxfill var(--dur) linear forwards; }
+.lx.is-held::before { animation: none; transform: scaleX(1); }
+@keyframes lxfill { to { transform: scaleX(1); } }
+.lx__num { display: block; font-size: 12px; letter-spacing: .1em; color: #4a4a4a; font-variant-numeric: tabular-nums; transition: color .6s var(--ease); }
+.lx__title { display: block; margin-top: 12px; font-size: clamp(17px, 1.6vw, 22px); font-weight: 400; letter-spacing: -0.035em; color: #5a5a5a; transition: color .6s var(--ease); }
+.lx__sub { display: block; margin-top: 8px; font-size: 13.5px; line-height: 1.5; color: var(--color-silver-mist); max-width: 22ch;
+  opacity: 0; transform: translateY(6px); transition: opacity .6s var(--ease), transform .6s var(--ease); }
+.lx.is-active .lx__num { color: var(--color-saffron-spark); }
+.lx.is-active .lx__title, .lx:hover .lx__title { color: #fff; }
+.lx.is-active .lx__sub { opacity: 1; transform: none; }
+.lx:focus-visible { outline: 1px solid var(--color-electric-iris); outline-offset: 4px; }
+.lstrip__cap { display: none; }
+/* phone: five short names in a row, the active one's line shown once underneath */
+@media (max-width: 700px) {
+  .lstrip__art { height: 170px; }
+  .lx { padding: 16px 6px 0 0; }
+  .lx::before { right: 6px; }
+  .lx__num { font-size: 10.5px; }
+  .lx__title { margin-top: 8px; font-size: 12.5px; letter-spacing: -0.02em; line-height: 1.25; }
+  .lx__sub { display: none; }
+  .lstrip__cap { display: block; margin: 22px 0 0; min-height: 1.5em; font-size: 14px; color: var(--color-silver-mist); transition: opacity .4s var(--ease); }
+  .lstrip__cap.is-swap { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lx__num, .lx__title, .lx__sub { transition: none; }
+  .lx.is-active::before { animation: none; transform: scaleX(1); }
+}

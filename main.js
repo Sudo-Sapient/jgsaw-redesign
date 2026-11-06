@@ -115,20 +115,220 @@
 
   const rand = (a, b) => a + Math.random() * (b - a);
   function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+  const clamp01 = x => Math.max(0, Math.min(1, x));
+  const easeIO = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+
+  /* ---------------- Persona: the whole page, made for the visitor's company ----------------
+     Once a visitor gives their company (vision popup), we keep a small profile in localStorage: name, domain,
+     a few real facts from the scan, their brand colour and their icon as points. Every section then gets one
+     line written for them (only from real scanned facts, default copy otherwise) and their icon appears in
+     the section pictures. "Not X? Reset" clears it. */
+  const JGP = { data: null, icon: null, glow: null, since: 0 };
+  {
+    const KEY = 'jgsaw_persona';
+    const poss = n => /s$/i.test(n) ? n + '\u2019' : n + '\u2019s';
+    const list = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+    // short product / offer names from the scan (e.g. "Air Max 90"), never sentences or menu words
+    // only retail sites list real products in their headings (B2B headings are taglines and menu words)
+    const products = p => !/b2c|retail/i.test(p.model || '') ? [] : (p.messages || []).filter(m => {
+      const w = m.trim().split(/\s+/);
+      return w.length <= 4 && !/[.?!:,]$/.test(m.trim())
+        && !/^(what|why|how|who|trusted|our|get|see|learn|explore|join|latest|news|featured|shop|new|more|all|about)\b/i.test(m)
+        && !/happening|newsletter|cookie|sign ?up|log ?in|contact|support/i.test(m);
+    }).slice(0, 2);
+    const SOCIAL_POSTS = { Instagram: 'Instagram', YouTube: 'YouTube', Facebook: 'Facebook', 'X / Twitter': 'X', LinkedIn: 'LinkedIn', TikTok: 'TikTok' };
+    function copy(p) {
+      const C = p.company, pr = products(p);
+      const posts = (p.social || []).map(s => SOCIAL_POSTS[s]).filter(Boolean);
+      const b2c = /b2c|retail/i.test(p.model || '');
+      return {
+        hero: `${poss(C)} expertise, scaled by real marketing science.`,
+        offer: `Send us a deal ${C} is working on`,
+        core: pr.length === 2 ? `Everything about ${C}, from ${pr[0]} to ${pr[1]}, documented once and approved by your team.`
+          : `Everything about ${C}, documented once and approved by your team.`,
+        road: `The way ${C} wins, captured with evidence and applied to every ${C} deal.`,
+        craft: `Proven frameworks applied to every ${C} ${b2c ? 'campaign, post and pitch' : 'deal, campaign and post'}.`,
+        gen: posts.length ? `For ${C}: posts for ${list(posts.slice(0, 4))}, plus the deals and campaigns behind them.`
+          : `For ${C}: deal research, campaigns and content in ${poss(C)} own voice.`,
+        comp: `Every ${C} deal and campaign makes the next one sharper.`,
+        deal: `Send us a deal ${C} is working on`,
+      };
+    }
+    const DEFAULTS = new Map();
+    const swap = (el, txt) => { if (!el) return; if (!DEFAULTS.has(el)) DEFAULTS.set(el, el.textContent); el.textContent = txt; };
+    function applyText(p) {
+      const c = copy(p);
+      swap(document.querySelector('.hero h1'), c.hero);
+      swap(document.querySelector('.hero__offer .label'), c.offer);
+      swap(document.querySelector('#send h2'), c.deal);
+      document.querySelectorAll('[data-persona]').forEach(el => {
+        const t = c[el.dataset.persona];
+        if (!t) return;
+        el.textContent = t; el.hidden = false;
+        requestAnimationFrame(() => el.classList.add('is-on'));
+      });
+      const reset = document.querySelector('.persona-reset');
+      if (reset) { reset.querySelector('[data-p="name"]').textContent = p.company; reset.hidden = false; }
+      document.title = `JgSaw for ${p.company}`;
+      if (p.glow) document.documentElement.style.setProperty('--brand', p.glow);
+      const df = document.getElementById('dealForm');
+      if (df) { if (!df.company.value) df.company.value = p.company; if (!df.url.value && p.domain) df.url.value = p.domain; }
+    }
+    function set(p, fresh) {
+      JGP.data = p;
+      JGP.glow = p.glow || null;
+      JGP.icon = p.icon && p.icon.length > 30 ? p.icon.map(q => ({ ...q, s: rand(1.1, 2.3), rot: rand(0, 6.28), sp: rand(-1, 1), ox: rand(-1, 1), oy: rand(-1, 1) })) : null;
+      JGP.since = fresh ? performance.now() : 0;
+      applyText(p);
+      if (fresh) { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) {} }
+      window.dispatchEvent(new CustomEvent('jgsaw:persona', { detail: p }));
+    }
+    JGP.set = set;
+    JGP.reset = () => {
+      ['jgsaw_persona', 'jgsaw_brand', 'jgsaw_vision_done'].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+      location.reload();
+    };
+    // 0..1: how far the icon has arrived (1 straight away on a return visit)
+    JGP.k = now => JGP.icon ? (JGP.since ? Math.min(1, (now - JGP.since) / 1600) : 1) : 0;
+    /* Draw the icon as triangles, centred at (cx, cy), longest side = size px. spread 0..1 scatters it. */
+    JGP.draw = (ctx, cx, cy, size, a, t, spread = 0, sz = 1) => {
+      if (!JGP.icon || a <= 0.01) return;
+      for (const q of JGP.icon) {
+        const x = cx + (q.x + q.ox * spread * 0.6) * size, y = cy + (q.y + q.oy * spread * 0.6) * size;
+        tri(ctx, x, y, q.s * DPR * sz, q.rot + t * q.sp * 0.4, q.col, a * (1 - spread * 0.5));
+      }
+    };
+    JGP.rgba = (alpha, fallback = '128,82,255') => JGP.glow
+      ? JGP.glow.replace('hsl(', 'hsla(').replace(')', `,${alpha})`) : `rgba(${fallback},${alpha})`;
+
+    /* Full-screen loader: the front door's waiting room, then the reveal.
+       scanning: a ring of triangles fills like a buffer while we read their site; one line says what we're doing,
+       another tells them about JgSaw. done: the ring breaks apart and gathers into their logo, the page underneath
+       is rewritten for them ("Building Nike's page"), and the screen lifts. */
+    const STEPS = ['Opening your website', 'Reading your homepage', 'Finding your logo', 'Mapping your products',
+      'Checking your channels', 'Looking for proof', 'Spotting the tools you use', 'Lining it all up'];
+    const FACTS = [
+      'Every business has its own way of winning. JgSaw captures it.',
+      'Layer 1 · Core Context: your business, documented once. A single source of truth.',
+      'You approve every part of your Core Context before anything uses it.',
+      'Layer 2 · Road to Win: your winning habit, documented with evidence.',
+      'Every statement shows how strong its evidence is, and traces back to its source.',
+      'Layer 3 · Craft: MEDDPICC, BANT, Gap Selling, ABM and E-E-A-T in every output.',
+      'Layer 4 · Generation: deal intelligence, campaign plans and content, produced.',
+      'Layer 5 · Compounding: learns from every reply, correction and deal outcome.',
+      'Use JgSaw with your team, inside Claude, or built around your own process.',
+      'Send us a deal and get what JgSaw makes of it within one working day.',
+    ];
+    JGP.loader = company => {
+      const ov = document.createElement('div');
+      ov.className = 'pload'; ov.setAttribute('role', 'status'); ov.setAttribute('aria-live', 'polite');
+      ov.innerHTML = `<canvas class="pload__art" aria-hidden="true"></canvas>
+        <div class="pload__text">
+          <p class="label label--amber pload__step"></p>
+          <p class="heading pload__title"></p>
+          <p class="body body--muted pload__fact"></p>
+        </div>`;
+      const $ = c => ov.querySelector(c), stepEl = $('.pload__step'), titleEl = $('.pload__title'), factEl = $('.pload__fact');
+      titleEl.textContent = `Getting to know ${company}`;
+      document.body.appendChild(ov);
+      document.documentElement.classList.add('pbuild-on');
+      requestAnimationFrame(() => ov.classList.add('is-in'));
+      const swapText = (el, txt) => { el.classList.add('is-swap'); setTimeout(() => { el.textContent = txt; el.classList.remove('is-swap'); }, 260); };
+      let si = 0, fi = 0;
+      stepEl.textContent = STEPS[0] + '…'; factEl.textContent = FACTS[0];
+      const stepT = setInterval(() => { si = Math.min(STEPS.length - 1, si + 1); swapText(stepEl, STEPS[si] + '…'); }, 1500);
+      const factT = setInterval(() => { fi = (fi + 1) % FACTS.length; swapText(factEl, FACTS[fi]); }, 3200);
+
+      const cv = $('canvas'), { ctx } = setup(cv);
+      const small = innerWidth < 700, N = small ? 340 : 520;
+      const P = Array.from({ length: N }, (_, i) => ({
+        u: i / N, r: 1 + gauss() * 0.045, s: rand(1.1, 2.4), rot: rand(0, 6.28), sp: rand(-1.2, 1.2), ph: rand(0, 6.28),
+        c: PALETTE[(Math.random() * PALETTE.length) | 0], d: Math.random() * 0.5,
+      }));
+      const t0 = performance.now();
+      let prog = 0, target = null, glow = null, tDone = 0, raf = 0, onBuilt = null, onEnd = null, swapped = false;
+      const frame = now => {
+        raf = requestAnimationFrame(frame);
+        const t = (now - t0) / 1000, W = cv.width, H = cv.height, R = Math.min(W, H) * 0.3;
+        // buffer: creeps towards 92% while we wait (we can't know the real progress), then snaps to full
+        const goal = target ? 1 : 0.92 * (1 - Math.exp(-t / 5));
+        prog += (goal - prog) * (target ? 0.12 : 0.04);
+        const g = tDone ? (now - tDone) / 1000 : 0;          // seconds since the scan came back
+        const gather = target ? easeIO(clamp01((g - 0.5) / 1.5)) : 0;
+        ctx.clearRect(0, 0, W, H); ctx.lineWidth = DPR;
+        const cx = W / 2, cy = H / 2, spin = t * 0.35;
+        // soft glow: violet while scanning, their colour once their logo forms
+        const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.6);
+        gr.addColorStop(0, gather > 0 && glow ? glow.replace('hsl(', 'hsla(').replace(')', `,${0.22 * gather})`) : `rgba(128,82,255,${0.1 + 0.06 * Math.sin(t * 2)})`);
+        gr.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.globalAlpha = 1; ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+        const L = Math.min(W * 0.8, H * 0.62);
+        for (let i = 0; i < N; i++) {
+          const p = P[i];
+          const a = p.u * 6.2832 + spin - Math.PI / 2;
+          const breathe = 1 + 0.02 * Math.sin(t * 3 + p.ph);
+          const rx = cx + Math.cos(a) * R * p.r * breathe, ry = cy + Math.sin(a) * R * p.r * breathe;
+          const filled = p.u < prog, head = Math.abs(p.u - prog) < 0.025 && !target;
+          let x = rx, y = ry, col = filled ? p.c : '#4a4a55', al = filled ? 0.9 : 0.35, sz = p.s;
+          if (head) { col = '#ffffff'; al = 1; sz *= 1.6; }
+          if (target) {
+            const q = target[i % target.length], k = easeIO(clamp01((g - 0.5 - p.d) / 1.3));
+            const tx = cx + q.x * L, ty = cy + q.y * L;
+            x = rx + (tx - rx) * k - Math.sin(k * Math.PI) * (rx - cx) * 0.25;
+            y = ry + (ty - ry) * k - Math.sin(k * Math.PI) * (ry - cy) * 0.25;
+            if (k > 0.5) { col = q.col; al = 0.95; }
+          }
+          if (!reduce) p.rot += p.sp * 0.02 * (1 - gather * 0.8);
+          tri(ctx, x, y, sz * DPR, p.rot, col, al);
+        }
+        ctx.globalAlpha = 1;
+        if (target && !swapped && g > 2.2) { swapped = true; onBuilt && onBuilt(); }
+        if (target && g > (reduce ? 1.2 : 4.2)) {
+          cancelAnimationFrame(raf); clearInterval(stepT); clearInterval(factT);
+          ov.classList.add('is-out');
+          document.documentElement.classList.remove('pbuild-on');
+          setTimeout(() => { ov.remove(); onEnd && onEnd(); }, 700);
+        }
+      };
+      raf = requestAnimationFrame(frame);
+      return {
+        // the scan came back: gather into their logo, rewrite the page underneath, then lift away
+        done: (p, logoPts, beforeSwap) => new Promise(res => {
+          clearInterval(stepT); clearInterval(factT);
+          target = logoPts && logoPts.length > 30 ? logoPts : (p.icon || [{ x: 0, y: 0, col: '#fff' }]);
+          glow = p.glow; tDone = performance.now();
+          swapText(stepEl, 'Building'); swapText(titleEl, `${poss(p.company)} page`);
+          swapText(factEl, 'This page, rewritten for you.');
+          onBuilt = () => { beforeSwap && beforeSwap(); set(p, true); window.scrollTo({ top: 0, behavior: 'instant' }); };
+          onEnd = res;
+        }),
+        // something went wrong: step aside so they can fix the address
+        fail: () => new Promise(res => {
+          cancelAnimationFrame(raf); clearInterval(stepT); clearInterval(factT);
+          ov.classList.add('is-out'); document.documentElement.classList.remove('pbuild-on');
+          setTimeout(() => { ov.remove(); res(); }, 500);
+        }),
+      };
+    };
+    JGP.build = (p, logoPts, before) => JGP.loader(p.company).done(p, logoPts, before);
+
+    try { const p = JSON.parse(localStorage.getItem(KEY) || 'null'); if (p && p.company) set(p, false); } catch (e) {}
+    document.addEventListener('click', e => { if (e.target.closest('.persona-reset button')) JGP.reset(); });
+  }
 
   /* ---------------- Hero: the JgSaw logo, assembled from particles ----------------
      A loose cloud of triangles sweeps in, left to right, and locks into a tidy grid that shows the jgsaw logo:
      white triangles spell the word, the rest take the logo's own tile colours.
      A light passes across it, it holds, then drifts apart and gathers again. Click to replay.
-     Once a visitor has given us their company (in the vision popup), every other loop the same cloud
-     gathers into THEIR logo instead, in its own colours: jgsaw, then you, then jgsaw again. */
+     Once a visitor has given us their company (front-door popup), the cloud gathers only into THEIR logo,
+     in its own colours, loop after loop. */
   const heroCanvas = document.getElementById('brain');
   if (heroCanvas) {
     const { ctx, resize } = setup(heroCanvas);
     const small = window.innerWidth < 700;
     const COLS = small ? 84 : 124;   // the logo becomes a tidy grid of triangles, one per cell
     const LETTER = '#f6f2ff';   // the logo's dark letters, as light on black so the word reads
-    let pts = null, ratio = 52 / 163, brand = null, brandOn = 0;
+    let pts = null, ratio = 52 / 163, brand = null, brandFrom = 0;
     // the visitor's logo as points in a box whose longest side is 1 (saved by the vision popup)
     try { const b = JSON.parse(localStorage.getItem('jgsaw_brand') || 'null'); if (b && b.pts && b.pts.length > 40) brand = b; } catch (e) {}
     // give every particle a spot in the visitor's logo. There are more particles than logo points, so they share,
@@ -205,9 +405,7 @@
     // a visitor just sent their details: let the jgsaw logo drift apart now, and gather into theirs next
     window.addEventListener('jgsaw:brand', e => {
       brand = e.detail; fitBrand();
-      const now = performance.now(), T = (now - t0) / 1000, c = Math.floor(T / CYCLE), ct = T - c * CYCLE;
-      if (ct < HOLD_END) t0 -= (HOLD_END - ct) * 1000;            // start drifting apart right away
-      brandOn = c % 2;                                             // the next loop (c + 1) is their logo
+      t0 = performance.now(); brandFrom = 0;                       // start a fresh loop, gathering into their logo
     });
     const easeOut = x => 1 - Math.pow(1 - x, 3);
     const easeInOut = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
@@ -217,8 +415,8 @@
       requestAnimationFrame(frame);
       if (!visible || !pts) return;
       const T = (now - t0) / 1000, ct = reduce ? 6 : T % CYCLE;
-      // which picture this loop gathers into: jgsaw, or (every other loop, once we know them) the visitor's logo
-      const theirs = !!(brand && !reduce && pts[0].bx !== undefined && (Math.floor(T / CYCLE) + brandOn) % 2 === 1);
+      // once we know the visitor, the hero is only their logo (jgsaw shows just behind the front-door popup)
+      const theirs = !!(brand && pts[0].bx !== undefined && (reduce || Math.floor(T / CYCLE) >= brandFrom));
       mx += (tmx - mx) * 0.05; my += (tmy - my) * 0.05;
       const W = heroCanvas.width, H = heroCanvas.height, L = Math.min(W * (W < 700 * DPR ? 0.92 : 0.86), H * 0.86 / ratio);
       const ox = W / 2, oy = H / 2;
@@ -424,11 +622,19 @@
       grd.addColorStop(1, 'rgba(128,82,255,0)');
       ctx.globalAlpha = 1; ctx.fillStyle = grd;
       ctx.fillRect(CX - S * 0.32, CY - S * 0.32, S * 0.64, S * 0.64);
+      const ik = JGP.k(now);   // their icon replaces the violet core once we know who they are
+      if (ik > 0.01) {
+        const gi = ctx.createRadialGradient(CX, CY, 0, CX, CY, S * 0.3);
+        gi.addColorStop(0, JGP.rgba(0.3 * pulse * e * ik)); gi.addColorStop(1, JGP.rgba(0));
+        ctx.globalAlpha = 1; ctx.fillStyle = gi; ctx.fillRect(CX - S * 0.3, CY - S * 0.3, S * 0.6, S * 0.6);
+      }
       for (const p of core) {
+        if (ik > 0.99) break;
         const b = 1 + Math.sin(t * 2.4 + p.x * 20) * 0.08;
         const [X, Y] = proj(CORE[0] + (p.x - CORE[0]) * b, CORE[1] + (p.y - CORE[1]) * b, CORE[2] + (p.z - CORE[2]) * b);
-        tri(ctx, X, Y, p.s * DPR, p.rot + t * p.sp, p.c, (0.6 + 0.4 * pulse) * e);
+        tri(ctx, X, Y, p.s * DPR, p.rot + t * p.sp, p.c, (0.6 + 0.4 * pulse) * e * (1 - ik));
       }
+      JGP.draw(ctx, CX, CY, S * 0.3 * (1 + 0.04 * Math.sin(t * 2.4)), (0.7 + 0.3 * pulse) * e * ik, t, 1 - ik, 0.8);
 
       // labels
       ctx.font = `600 ${12 * DPR}px Inter, system-ui, sans-serif`;
@@ -449,7 +655,7 @@
       };
       // core label sits above the core
       ctx.globalAlpha = e; ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff';
-      ctx.fillText('CORE CONTEXT', CX, CY - 0.17 * S - 6 * DPR);
+      ctx.fillText('CORE CONTEXT', CX, CY - (ik > 0.01 ? 0.22 : 0.17) * S - 6 * DPR);
       REGIONS.forEach((R, i) => {
         const [X, Y] = proj(...R.p);
         drawLabel(R.name, X, Y, R.c, (reduce ? 0.85 : levels[i]) * e, R.L);
@@ -593,8 +799,21 @@
         }
       }
 
+      // their icon: the destination at the end of the road, then it crowns the W
+      const rk = JGP.k(now);
+      if (rk > 0.01) {
+        const end = roadPts[N], top = [0, -0.62];
+        const ix = end[0] + (top[0] - end[0]) * m - 0.04 * (1 - m), iy = end[1] - 0.16 + (top[1] - end[1] + 0.16) * m;
+        const [IX, IY] = toScreen(ix, iy);
+        const size = S * (0.2 + 0.1 * m), arrive = reduce ? 1 : 0.55 + 0.45 * clamp01((carU - 0.75) / 0.25);
+        const gi = ctx.createRadialGradient(IX, IY, 0, IX, IY, size * 1.3);
+        gi.addColorStop(0, JGP.rgba(0.22 * arrive * e * rk)); gi.addColorStop(1, JGP.rgba(0));
+        ctx.globalAlpha = 1; ctx.fillStyle = gi; ctx.fillRect(IX - size * 1.3, IY - size * 1.3, size * 2.6, size * 2.6);
+        JGP.draw(ctx, IX, IY, size, arrive * e * rk, t, 1 - rk, 0.75);
+      }
+
       // label
-      if (m < 0.05 && win < 0.02) {
+      if (m < 0.05 && win < 0.02 && rk < 0.01) {
         ctx.globalAlpha = 0.6 * e * clamp01((ct - 0.6) / 0.6);
         ctx.fillStyle = '#9a9a9a';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -646,8 +865,6 @@
   };
 
   /* ---------------- Layer animations (same particles + renderer as SHAPES, they only move them) ---------------- */
-  const clamp01 = x => Math.max(0, Math.min(1, x));
-  const easeIO = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
   const easeOut3 = x => 1 - Math.pow(1 - x, 3);
   const dirKey = ([x, y, z]) => { const r = Math.hypot(x, y, z) || 1; return Math.floor((Math.acos(y / r)) / Math.PI * 24) * 10 + (Math.atan2(z, x) + Math.PI) / (2 * Math.PI); };
   // Pair two point sets by rank of their direction, so every particle travels a short, coherent path
@@ -725,9 +942,10 @@
           p.amber = p.role === 'ring' ? w3 : 0;
           bestness = Math.max(bestness, w3);
         }
-        return { glow: bestness };
+        const lvl = prev + (cur - prev) * easeIO(clamp01((f - 0.3) / MORPH));   // the icon upgrades with the shape
+        return { glow: bestness, icon: { x: 0, y: 0, z: 0, a: 0.5 + 0.5 * lvl / 3, size: 0.32 + 0.1 * lvl, flat: true } };
       },
-      final(pts) { for (const p of pts) { [p.x, p.y, p.z] = p.st[3]; p.boost = p.role === 'grid' ? 0.55 : p.role === 'land' ? 1.25 : 1; p.amber = p.role === 'ring' ? 1 : 0; } return { glow: 1 }; },
+      final(pts) { for (const p of pts) { [p.x, p.y, p.z] = p.st[3]; p.boost = p.role === 'grid' ? 0.55 : p.role === 'land' ? 1.25 : 1; p.amber = p.role === 'ring' ? 1 : 0; } return { glow: 1, icon: { x: 0, y: 0, z: 0, a: 1, size: 0.62, flat: true } }; },
     },
 
     /* Generation: three balls; one by one they become a handshake (deals), $ (campaigns), a social icon (content) */
@@ -787,11 +1005,12 @@
           p.x = bx + (p.icon[0] - bx) * q; p.y = by + (p.icon[1] - by) * q; p.z = p.ball[2] * (1 - q) + p.icon[2] * q;
           p.boost = 1 + 0.25 * q;
         }
-        return { glow: 0, sway: 0.32 * Math.sin(T * 0.45) };
+        const all = easeIO(clamp01((t - this.START - 2 * this.GAP - 0.6) / 1)) * (1 - back);
+        return { glow: 0, sway: 0.32 * Math.sin(T * 0.45), icon: { x: 0, y: 0.03, z: 0, a: 0.35 + 0.65 * all, size: 0.26, flat: true } };
       },
       final(pts) {
         for (const p of pts) { [p.x, p.y, p.z] = p.icon; p.boost = 1.25; }
-        return { glow: 0, sway: 0 };
+        return { glow: 0, sway: 0, icon: { x: 0, y: 0.03, z: 0, a: 1, size: 0.26, flat: true } };
       },
     },
 
@@ -853,9 +1072,11 @@
             p.boost = 1 - 0.55 * u;
           }
         }
-        return { glow: 0 };
+        const built = easeOut3(clamp01((t - this.BUILD * 0.8) / 0.6)), u = clamp01(bt / this.BREAK);
+        return { glow: 0, icon: { x: 0, y: Math.min(this.FLOOR, tw.top - 0.14 - 0.06 * s + 2.2 * u * u * 0.5), z: 0,
+          a: built * (1 - u * u), size: [0.2, 0.26, 0.36][s], flat: true, spread: u } };
       },
-      final(pts) { for (const p of pts) { const t = p.tw[2]; [p.x, p.y, p.z] = t || p.rub; p.boost = t ? 1 : 0.45; } return { glow: 0 }; },
+      final(pts) { for (const p of pts) { const t = p.tw[2]; [p.x, p.y, p.z] = t || p.rub; p.boost = t ? 1 : 0.45; } return { glow: 0, icon: { x: 0, y: this.towers[2].top - 0.26, z: 0, a: 1, size: 0.36, flat: true } }; },
     },
   };
 
@@ -898,6 +1119,17 @@
         const col = p.amber > 0.5 ? '#ffb829' : p.c;
         tri(ctx, W / 2 + x1 * S * persp * 1.5 * k, H / 2 + y1 * S * persp * 1.5 * k,
           p.s * DPR * (0.7 + depth * 0.6), p.rot + t * p.sp * 0.5, col, Math.min(1, (0.2 + depth * 0.8) * e * p.boost));
+      }
+      // their icon (Nike's swoosh) inside the picture, once we know who they are
+      const ik = JGP.k(now);
+      if (fx && fx.icon && ik > 0.01 && fx.icon.a > 0.01) {
+        const I = fx.icon, x1 = I.x * cy - I.z * sy, z1 = I.x * sy + I.z * cy, y1 = I.y * cx - z1 * sx, z2 = I.y * sx + z1 * cx;
+        const persp = 1 / (1.8 - z2 * 0.5), k = 0.55 + 0.45 * e;
+        const X = W / 2 + x1 * S * persp * 1.5 * k, Y = H / 2 + y1 * S * persp * 1.5 * k, size = I.size * S * persp * 1.5 * k;
+        const gi = ctx.createRadialGradient(X, Y, 0, X, Y, size);
+        gi.addColorStop(0, JGP.rgba(0.25 * I.a * ik * e)); gi.addColorStop(1, JGP.rgba(0));
+        ctx.globalAlpha = 1; ctx.fillStyle = gi; ctx.fillRect(X - size, Y - size, size * 2, size * 2);
+        JGP.draw(ctx, X, Y, size, I.a * ik * e, t, Math.max(1 - ik, I.spread || 0), 0.8);
       }
       if (fx && fx.labels) {
         ctx.fillStyle = '#ffb829'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -1068,16 +1300,51 @@
         return { x: 0, y: S / 2 - 60 * k, w: S, h: 120 * k };
       }, N);
     }
+    /* The company's small square mark (Nike's swoosh) as points, for the section pictures.
+       Falls back to their first letter in their brand colour when no usable icon exists. */
+    async function iconShape(icons, name, glow, N) {
+      const list = (icons || []).filter(src => !/^data:image\/jpe?g/i.test(src));
+      const imgs = (await Promise.all(list.map(loadImg))).filter(im => im && Math.max(im.naturalWidth || 0, im.naturalHeight || 0) >= 32);
+      for (const img of imgs) {
+        const iw = img.naturalWidth || 200, ih = img.naturalHeight || 200;
+        const m = maskFrom((x, S) => {
+          const k = (S * 0.9) / Math.max(iw, ih), w = iw * k, h = ih * k, bx = (S - w) / 2, by = (S - h) / 2;
+          try { x.drawImage(img, bx, by, w, h); } catch (e) { return null; }
+          return { x: bx, y: by, w, h };
+        }, N);
+        if (m) return brandTint(m, imgs.filter(im => im !== img));
+      }
+      const letter = ((name || '?').trim()[0] || '?').toUpperCase();
+      const m = maskFrom((x, S) => {
+        x.font = `600 ${S * 0.7 | 0}px Inter, system-ui, sans-serif`;
+        x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle';
+        x.fillText(letter, S / 2, S / 2);
+        return { x: S * 0.2, y: S * 0.15, w: S * 0.6, h: S * 0.7 };
+      }, N);
+      if (m && glow) {
+        const h = glow.match(/hsl\((\d+),(\d+)%/);
+        if (h) m.pts.forEach(q => { q.col = Math.random() < 0.8 ? `hsl(${h[1]},${h[2]}%,${62 + (Math.random() * 12 | 0)}%)` : 'hsl(0,0%,92%)'; });
+      }
+      return m;
+    }
     const DULL = '#7d7d7d';
     if (/[?&]debug=1\b/.test(location.search)) window.__jgLogoShape = logoShape;   // lets the test script check logos
 
-    /* ===== Popup: opens after 10 seconds actually on the page ===== */
+    /* ===== Popup: the front door. Until a visitor tells us their company, it opens straight away and can't be
+       closed (no ×, Escape or click-outside). The page behind is blurred, locked and inert. Once they're in, the
+       whole page is built around their company and the popup never comes back (until "Not you? Reset"). ===== */
     const form = document.getElementById('vpopForm');
     const msg = form.querySelector('.form-msg');
     const btn = form.querySelector('button[type="submit"]');
     // Stays "done" only once they press × or send their details. Escape / clicking outside just hides it for this visit.
     const SEEN = 'jgsaw_vision_done';
     const force = /[?&]vision=1\b/.test(location.search);
+    const GATE = !JGP.data && !/[?&]gate=0\b/.test(location.search);   // ?gate=0 lets test scripts in without it
+    const shut = on => {   // lock the page behind the popup
+      document.documentElement.classList.toggle('gate-on', on);
+      document.querySelectorAll('body > header, body > main, body > footer').forEach(el => { el.inert = on; });
+    };
+    if (GATE) { pop.classList.add('is-gate'); shut(true); if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; window.scrollTo(0, 0); }
     let lastFocus = null, closing = false;
     const panel = pop.querySelector('.vpop__panel');
     const open = () => {
@@ -1085,6 +1352,7 @@
       lastFocus = document.activeElement;
       pop.classList.remove('is-leaving', 'is-scanning', 'is-dissolving');
       pop.hidden = false;
+      if (GATE) shut(true);
       requestAnimationFrame(() => pop.classList.add('is-open'));
       setTimeout(() => form.company.focus(), 60);
       startArt();
@@ -1146,6 +1414,8 @@
     // how: 'done' (details sent), 'cross' (pressed ×), 'soft' (Escape / clicked outside)
     const close = async how => {
       if (closing || pop.hidden) return;
+      if (GATE && how !== 'done') return;   // the front door only opens by filling it in
+      if (GATE) shut(false);
       closing = true;
       if (how === 'done' || how === 'cross') { try { localStorage.setItem(SEEN, '1'); } catch (e) {} }
       if (!reduce) {
@@ -1160,9 +1430,16 @@
       closing = false;
       if (how !== 'done' && lastFocus && lastFocus.focus) lastFocus.focus();
     };
+    // close without the dissolve: used while the full-screen loader is covering it
+    const closeNow = () => {
+      try { localStorage.setItem(SEEN, '1'); } catch (e) {}
+      if (GATE) shut(false);
+      pop.classList.remove('is-open', 'is-scanning'); pop.hidden = true; stopArt();
+    };
     let seen = false;
     try { seen = localStorage.getItem(SEEN) === '1'; } catch (e) {}
-    if (!seen || force) {
+    if (GATE || force) setTimeout(open, reduce ? 0 : 350);
+    else if (!seen) {
       let onPage = 0, t0 = performance.now();
       const tick = setInterval(() => {
         const now = performance.now();
@@ -1219,29 +1496,51 @@
       if (!URL_RE.test(url)) { form.url.closest('.field').classList.add('is-invalid'); msg.textContent = 'Please add your website, like acme.com'; return; }
       btn.disabled = true; btn.textContent = 'Scanning your website…';
       pop.classList.add('is-scanning');
-      msg.textContent = 'Reading your pages, channels, tools and proof.';
+      msg.textContent = '';
+      const load = JGP.loader(company);   // full-screen loader covers the popup while we read their site
       try {
         const r = await fetch(`/api/analyze?company=${encodeURIComponent(company)}&url=${encodeURIComponent(url)}`);
         const data = await r.json();
         if (!r.ok || data.error) throw new Error(data.error || 'Something went wrong.');
         data.input = url;
         const shapeP = logoShape(data.logos, data.company, innerWidth < 700 ? 650 : 1000);
-        msg.textContent = 'Done. Building your vision board…';
-        await wait(500);
-        await close('done');
         const shape = await shapeP;
         // the hero shows the visitor's own logo from now on (dull in the mess, bright once aligned)
         if (shape && shape.pts) {
           const brandData = { company: data.company, glow: shape.glow, pts: shape.pts.map(p => ({ x: +p.x.toFixed(3), y: +p.y.toFixed(3), col: p.col })) };
           try { localStorage.setItem('jgsaw_brand', JSON.stringify(brandData)); } catch (e2) {}
-          window.dispatchEvent(new CustomEvent('jgsaw:brand', { detail: brandData }));
+          shape.saved = brandData;
         }
-        showBoard(data, shape);
+        // then the whole page is rebuilt for them: a short "Building Nike's page" moment, and the board waits in the footer
+        const ic = await iconShape(data.icons, data.company, shape && shape.glow, innerWidth < 700 ? 260 : 380).catch(() => null);
+        const persona = {
+          company: data.company, domain: data.domain, model: data.model || '',
+          messages: data.messages || [], social: data.social || [],
+          glow: (ic && ic.glow) || (shape && shape.glow) || null,
+          icon: ic ? ic.pts.map(p => ({ x: +p.x.toFixed(3), y: +p.y.toFixed(3), col: p.col })) : null,
+        };
+        // the loader gathers into their full logo, then the page underneath is rewritten and the popup quietly goes
+        await load.done(persona, shape && shape.pts, () => closeNow());
+        // as the loader lifts, the hero gathers from a fresh cloud into their logo
+        if (shape && shape.saved) window.dispatchEvent(new CustomEvent('jgsaw:brand', { detail: shape.saved }));
+        showBoard(data, shape, true);
       } catch (err) {
+        await load.fail();
         pop.classList.remove('is-scanning');
-        msg.textContent = err.message && err.message.length < 140 ? err.message : "We couldn't read that website. Please check the address.";
+        const why = (err.message && err.message.length < 140 ? err.message : "We couldn't read that website.").replace(/\s*Check the address\.?\s*$/i, '');
+        msg.textContent = why + ' Check the address, or ';
+        const go = document.createElement('button');
+        go.type = 'button'; go.className = 'vpop__anyway'; go.textContent = `continue as ${company}`;
+        go.addEventListener('click', async () => {
+          go.disabled = true;
+          const ic = await iconShape([], company, null, innerWidth < 700 ? 260 : 380).catch(() => null);
+          const domain = url.replace(/^https?:\/\//i, '').replace(/^www\./i, '').split(/[/?#]/)[0].toLowerCase();
+          await JGP.build({ company, domain, model: '', messages: [], social: [], glow: null,
+            icon: ic ? ic.pts.map(p => ({ x: +p.x.toFixed(3), y: +p.y.toFixed(3), col: p.col })) : null }, null, () => closeNow());
+        });
+        msg.appendChild(go);
       } finally {
-        btn.disabled = false; btn.textContent = 'Show my vision';
+        btn.disabled = false; btn.textContent = 'Build my page';
       }
     });
 
@@ -1258,7 +1557,7 @@
       ...board.querySelectorAll(':scope > .wrap > .label, .vision__title, .vision__sub, .vision__stage, .vision__scores, .vision__cols > div, .vision__note')
     ];
 
-    async function showBoard(d, shape) {
+    async function showBoard(d, shape, quiet) {
       const $ = k => board.querySelector(`[data-v="${k}"]`);
       $('company').textContent = d.company;
       $('domain').textContent = d.domain;
@@ -1303,10 +1602,13 @@
       board.hidden = false;
       buildVision(d, shape);
 
-      if (reduce) {
+      if (reduce || quiet) {
+        // quiet: the page was just rebuilt for them, so the board fills in where it is, without pulling them down
         els.forEach(el => el.classList.add('is-in'));
         board.querySelectorAll('.vbar [data-w]').forEach(b => { b.style.width = b.dataset.w + '%'; });
-        board.scrollIntoView({ block: 'start' });
+        const jump = document.querySelector('.persona-reset [data-p="board"]');
+        if (jump) jump.hidden = false;
+        if (!quiet) board.scrollIntoView({ block: 'start' });
         return;
       }
       const full = board.scrollHeight;
@@ -1700,6 +2002,100 @@
         if (!mm.querySelector('.mm__group.is-open')) { list = LAYERS; play(); }
       }));
     }
+  })();
+
+  /* ---------------- Five layers strip (under the hero): the ribbon ----------------
+     A flowing ribbon of triangles runs across all five layers like a signal. Over the active layer it swells,
+     brightens and takes that layer's colour; the swell walks 01 → 05. After 05 a bright pulse arcs back over
+     the top to 01: the end feeds the start (compounding). Hover holds a layer; click goes to it.
+     Only draws while on screen. */
+  (() => {
+    const cv = document.querySelector('.lstrip__art'), items = [...document.querySelectorAll('.lstrip .lx')];
+    if (!cv || !items.length) return;
+    const { ctx } = setup(cv), cap = document.querySelector('.lstrip__cap');
+    const COL = ['#a98bff', '#ffb829', '#2fd1b0', '#ff6fa8', '#4d7dff'];
+    const hex = (c, a) => c + Math.round(clamp01(a) * 255).toString(16).padStart(2, '0');
+    const glowAt = (x, y, r, c, a) => {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, hex(c, a)); g.addColorStop(1, '#0000');
+      ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    };
+    const small = innerWidth < 700;
+    const RIB = Array.from({ length: small ? 520 : 900 }, () => ({
+      u: Math.random(), strand: (Math.random() * 3) | 0, off: rand(-1, 1), r: rand(0, 6.28), sp: rand(-0.03, 0.03), s: rand(0.9, 2),
+      c: Math.random() < 0.25 ? PALETTE[(Math.random() * PALETTE.length) | 0] : null,
+    }));
+    const pulse = [], act = [0, 0, 0, 0, 0];
+    const DUR = 4200;
+    let cur = -1, held = false, visible = false, timer = 0, wrap = 0, raf = 0;
+    const pick = (i, hold) => {
+      if (i === 0 && cur === 4 && !hold) wrap = performance.now();       // 05 → 01: the pulse runs home
+      cur = i;
+      items.forEach((a, j) => {
+        a.classList.remove('is-active'); a.classList.toggle('is-held', j === i && !!hold);
+        if (j === i) { void a.offsetWidth; a.classList.add('is-active'); }
+      });
+      if (cap) {
+        cap.classList.add('is-swap');
+        setTimeout(() => { cap.textContent = items[i].querySelector('.lx__sub').textContent; cap.classList.remove('is-swap'); }, 200);
+      }
+    };
+    const loop = () => { clearTimeout(timer); if (!reduce && !held && visible) timer = setTimeout(() => { pick((cur + 1) % 5); loop(); }, DUR); };
+    // the middle of each column, in canvas pixels
+    const centres = () => {
+      const r = cv.getBoundingClientRect();
+      return items.map(a => { const b = a.getBoundingClientRect(), pr = parseFloat(getComputedStyle(a).paddingRight) || 0; return (b.left - r.left + (b.width - pr) / 2) * DPR; });
+    };
+    let X = null, lastW = 0;
+    const frame = now => {
+      raf = visible ? requestAnimationFrame(frame) : 0;
+      const W = cv.width, H = cv.height, t = now / 1000;
+      if (!X || W !== lastW) { X = centres(); lastW = W; }
+      for (let i = 0; i < 5; i++) act[i] += ((i === cur ? 1 : 0) - act[i]) * 0.06;
+      ctx.clearRect(0, 0, W, H); ctx.lineWidth = DPR;
+      const gapX = X[1] - X[0], x0 = X[0] - gapX * 0.45, x1 = X[4] + gapX * 0.45, cy = H * 0.62, sig = gapX * 0.42;
+      const SW = small ? 0.55 : 1;                                       // a gentler swell on a phone
+      for (let i = 0; i < 5; i++) if (act[i] > 0.05) glowAt(X[i], cy, gapX * 0.55, COL[i], 0.14 * act[i]);
+      for (let k = 0; k < RIB.length; k++) {
+        const p = RIB[k];
+        if (!reduce) p.u += 0.0007; if (p.u > 1) p.u -= 1;
+        const x = x0 + (x1 - x0) * p.u;
+        let e = 0, best = 0, bi = 0;
+        for (let i = 0; i < 5; i++) { const v = act[i] * Math.exp(-Math.pow((x - X[i]) / sig, 2)); e += v; if (v > best) { best = v; bi = i; } }
+        const amp = (10 + 46 * e * SW) * DPR;
+        const y = cy + Math.sin(x / (90 * DPR) - (reduce ? 0 : t * 1.6) + p.strand * 2.094) * amp + p.off * (4 + 14 * e * SW) * DPR;
+        const edge = Math.min(1, p.u * 8, (1 - p.u) * 8);
+        if (!reduce) p.r += p.sp * (1 + e * 2);
+        tri(ctx, x, y, p.s * DPR * (1 + e * 0.35), p.r, p.c || (e > 0.3 ? COL[bi] : '#7a7a7a'), (0.16 + 0.8 * e) * edge);
+      }
+      // the way home: a faint dotted arc over the top, and a bright pulse that travels it on 05 → 01
+      const top = H * 0.1, w = wrap ? clamp01((now - wrap) / 1500) : 1;
+      ctx.globalAlpha = 0.12; ctx.strokeStyle = '#fff'; ctx.setLineDash([2 * DPR, 6 * DPR]);
+      ctx.beginPath(); ctx.moveTo(x1, cy); ctx.bezierCurveTo(x1, top, x0, top, x0, cy); ctx.stroke(); ctx.setLineDash([]);
+      if (w < 1) {
+        const e = easeIO(w), bz = (a, b, c, d, s) => (1 - s) ** 3 * a + 3 * (1 - s) ** 2 * s * b + 3 * (1 - s) * s * s * c + s ** 3 * d;
+        const px = bz(x1, x1, x0, x0, e), py = bz(cy, top, top, cy, e);
+        glowAt(px, py, 34 * DPR, '#ffffff', 0.45);
+        for (let i = 0; i < 4; i++) pulse.push({ x: px + rand(-4, 4) * DPR, y: py + rand(-4, 4) * DPR, l: 0, L: rand(0.5, 1), r: rand(0, 6), s: rand(1, 2.2), c: PALETTE[(Math.random() * PALETTE.length) | 0] });
+      }
+      for (let i = pulse.length - 1; i >= 0; i--) {
+        const p = pulse[i]; p.l += 1 / 60;
+        if (p.l > p.L) { pulse.splice(i, 1); continue; }
+        p.r += 0.05; tri(ctx, p.x, p.y, p.s * DPR, p.r, p.c, 1 - p.l / p.L);
+      }
+      ctx.globalAlpha = 1;
+    };
+    addEventListener('resize', () => { X = null; });
+    watchVisible(cv.closest('.lstrip'), v => {
+      if (v === visible) return;
+      visible = v;
+      if (v) { X = null; if (cur < 0) pick(0); if (!raf) raf = requestAnimationFrame(frame); loop(); } else clearTimeout(timer);
+    });
+    items.forEach((a, i) => {
+      const hold = () => { held = true; clearTimeout(timer); pick(i, true); };
+      const free = () => { held = false; pick(cur); loop(); };
+      a.addEventListener('mouseenter', hold); a.addEventListener('focus', hold);
+      a.addEventListener('mouseleave', free); a.addEventListener('blur', free);
+    });
   })();
 
   /* ---------------- Ambient field ---------------- */

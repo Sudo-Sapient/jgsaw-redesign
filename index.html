@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=1793612439">
+<link rel="stylesheet" href="styles.css?v=1793612452">
 </head>
 <body>
 
@@ -160,10 +160,46 @@
         <p class="body body--muted">Name the company and what you'd sell them. We send back what JgSaw makes of it within one working day.</p>
         <a href="#send" class="btn btn--primary">Send us a deal</a>
       </div>
+      <p class="persona-reset" hidden>Made for <span data-p="name"></span>. <a href="#vision" data-p="board" hidden>Your vision board ↓</a> <button type="button">Not you? Reset</button></p>
     </div>
     <div class="hero__visual">
       <canvas id="brain" aria-label="The jgsaw logo gathering from light" role="img"></canvas>
     </div>
+  </div>
+</section>
+
+<!-- ============ FIVE LAYERS (strip under the hero): a ribbon of triangles runs through all five ============ -->
+<section class="lstrip" aria-label="The five layers of JgSaw">
+  <div class="wrap">
+    <canvas class="lstrip__art" aria-hidden="true"></canvas>
+    <nav class="lstrip__row">
+      <a class="lx" href="#layer-1">
+        <span class="lx__num">01</span>
+        <span class="lx__title">Core Context</span>
+        <span class="lx__sub">Your business, documented once</span>
+      </a>
+      <a class="lx" href="#layer-2">
+        <span class="lx__num">02</span>
+        <span class="lx__title">Road to Win</span>
+        <span class="lx__sub">Your winning habit, with evidence</span>
+      </a>
+      <a class="lx" href="#layer-3">
+        <span class="lx__num">03</span>
+        <span class="lx__title">Craft</span>
+        <span class="lx__sub">Proven frameworks in every output</span>
+      </a>
+      <a class="lx" href="#layer-4">
+        <span class="lx__num">04</span>
+        <span class="lx__title">Generation</span>
+        <span class="lx__sub">Deals, campaigns and content</span>
+      </a>
+      <a class="lx" href="#layer-5">
+        <span class="lx__num">05</span>
+        <span class="lx__title">Compounding</span>
+        <span class="lx__sub">Learns as you grow</span>
+      </a>
+    </nav>
+    <p class="lstrip__cap" aria-hidden="true"></p>
   </div>
 </section>
 
@@ -175,6 +211,7 @@
       <p class="label label--amber reveal">Layer 1</p>
       <h2 class="heading-lg reveal">Core Context</h2>
       <p class="subheading reveal">Your business, documented once. A single source of truth.</p>
+      <p class="persona-line" data-persona="core" hidden></p>
       <ul class="points">
         <li class="reveal">Company profile, products, customer profiles, buying committee, competitors and brand voice in one place</li>
         <li class="reveal">JgSaw drafts it and you approve every part before anything uses it</li>
@@ -191,6 +228,7 @@
       <p class="label label--amber reveal">Layer 2</p>
       <h2 class="heading-lg reveal">Road to Win</h2>
       <p class="subheading reveal">Your winning habit, documented with evidence.</p>
+      <p class="persona-line" data-persona="road" hidden></p>
       <ul class="points">
         <li class="reveal">Every business has its own winning habit: how it finds, qualifies and closes the deals it wins</li>
         <li class="reveal">Captured in a working session with your key people, then backed by the evidence behind each point</li>
@@ -209,6 +247,7 @@
       <p class="label label--amber reveal">Layer 3</p>
       <h2 class="heading-lg reveal">Craft</h2>
       <p class="subheading reveal">Proven frameworks in every output.</p>
+      <p class="persona-line" data-persona="craft" hidden></p>
       <dl class="frameworks">
         <div class="reveal"><dt>Deals</dt><dd>MEDDPICC, BANT, Gartner's buying jobs, Gap Selling and April Dunford's positioning</dd></div>
         <div class="reveal"><dt>Campaigns</dt><dd>Account-based marketing</dd></div>
@@ -226,6 +265,7 @@
       <p class="label label--amber reveal">Layer 4</p>
       <h2 class="heading-lg reveal">Generation</h2>
       <p class="subheading reveal">Deals, campaigns and content, produced.</p>
+      <p class="persona-line" data-persona="gen" hidden></p>
       <div class="outputs">
         <div class="reveal">
           <h3 class="heading-xs">Deal intelligence</h3>
@@ -251,6 +291,7 @@
       <p class="label label--amber reveal">Layer 5</p>
       <h2 class="heading-lg reveal">Compounding</h2>
       <p class="subheading reveal">Learns as you grow.</p>
+      <p class="persona-line" data-persona="comp" hidden></p>
       <ul class="points">
         <li class="reveal">Learns from replies, corrections, check-ins and deal outcomes</li>
         <li class="reveal">Stays current through ongoing research on your market, competitors and each prospect</li>
@@ -436,9 +477,9 @@
   <div class="vpop__panel" role="dialog" aria-modal="true" aria-labelledby="vpopTitle">
     <button class="vpop__close" type="button" aria-label="Close">&times;</button>
     <canvas class="vpop__art" id="vpopArt" aria-hidden="true"></canvas>
-    <p class="label label--amber">Free vision board</p>
-    <h2 class="heading vpop__title" id="vpopTitle">See your company today, and with JgSaw.</h2>
-    <p class="body body--muted">Tell us who you are. We read your website and show you your go-to-market, now and next. Takes about 10 seconds.</p>
+    <p class="label label--amber">Before you start</p>
+    <h2 class="heading vpop__title" id="vpopTitle">See JgSaw built around your company.</h2>
+    <p class="body body--muted">Tell us your company and website. We read your site, then build this page and your vision board around you. Takes about 10 seconds.</p>
     <form class="deal-form vpop__form" id="vpopForm" novalidate>
       <label class="field">
         <span class="label">Company name</span>
@@ -448,11 +489,11 @@
         <span class="label">Company website</span>
         <input type="text" name="url" placeholder="acme.com" required inputmode="url" autocomplete="url" maxlength="200">
       </label>
-      <button type="submit" class="btn btn--primary">Show my vision</button>
+      <button type="submit" class="btn btn--primary">Build my page</button>
       <p class="form-msg" role="status" aria-live="polite"></p>
     </form>
   </div>
 </div>
-<script src="main.js?v=1793612439"></script>
+<script src="main.js?v=1793612452"></script>
 </body>
 </html>
